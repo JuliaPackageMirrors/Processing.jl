@@ -1,4 +1,3 @@
-require("GLU")
 require("OpenGL")
 using GLU
 using OpenGL
