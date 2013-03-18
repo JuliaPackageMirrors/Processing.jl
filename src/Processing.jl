@@ -1,6 +1,4 @@
-require("GLU")
-require("OpenGL")
-using GLU
+global OpenGLver="3.3"
 using OpenGL
 
 module Processing
