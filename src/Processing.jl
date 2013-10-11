@@ -4,24 +4,73 @@ using OpenGL
 module Processing
 
 export @setup, @draw
+export displayHeight, displayWidth, height, size, width
+# export cursor focused, frameCount, frameRate, noCursor
+# export createShape, loadShape
+export arc, ellipse, line, point, quad, rect, triangle
+# export bezier, bezierDetail, bezierPoint, bezierTangent, curve, curveDetail, curvePoint, curveTangent, curveTightness
+export sphere, sphereDetail
+# export box
+# export ellipseMode, noSmooth, rectMode, smooth, strokeCap, strokeJoin, strokeWeight
+export beginShape, endShape, vertex
+# export bezierVertex, curveVertex, quadraticVertex
+# export shape, shapeMode
+export background, fill, noFill
+# export colorMode, noStroke, Stroke
+# export alpha, blue, brightness, color, green, hue, lerpColor, red, saturation
+# export createImage
+# export image, imageMode, loadImage, noTint, requestImage, tint
+# export texture, textureMode, textureWrap
+# export blend, copy, filter, get, loadPixels, set, updatePixels
+export blendMode
+# export createGraphics, hint
+# export loadShader, resetShader, shader
+# export createFont, loadFont, text, textFont
+# export textAlign, textLeading, textMode, textSize, textWidth,
+# export textAscent, textDescent
 
-# necessary globals
+# necessary global state structure (but, is it really necessary?)
 
-global Sdet
-global _no_fill
+type stateStruct
+	Sdet::Real #sphere detail
+	noFill::Bool #should drawing elements be filled or not?
+	h::Integer #height of display window
+	w::Integer #width of display window
+	dispH::Integer #height of display area
+	dispW::Integer #width of display area
+	wintitle::String #title of display window
+	icontitle::String #title of docked icon
+	bpp::Integer #Bits Per Pixel (BPP)
+	
+	function processingState()
+		new(
+			5, #give spheres decent detail, but be kind to low-end systems
+			1, #don't fill by default
+			480, #Height - default = 480
+			640, #Width - default = 640			
+			480, #Display height - default = 480
+			640, #Display width - default = 640
+			"Processing.jl",
+			"Processing.jl",
+			16 #BPP - default = 16bpp
+			)
+	end
+end
+
+global processingState = stateStruct()
 
 # macros to simulate Processing environment
 
 macro setup(body)
-	SDL_Init(SDL_INIT_VIDEO)
-	videoFlags = (SDL_OPENGL | SDL_GL_DOUBLEBUFFER | SDL_HWPALETTE | SDL_RESIZABLE)
-	videoFlags = (videoFlags | SDL_HWSURFACE)
-	videoFlags = (videoFlags | SDL_HWACCEL)
-	SDL_gl_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
-	SDL_SetVideoMode(width, height, bpp, videoFlags)
-	SDL_wm_SetCaption(wintitle, icontitle)
+	global processingState
 	
-	glViewPort(0, 0, width, height)
+	SDL_Init(SDL_INIT_VIDEO)
+	videoFlags = (SDL_OPENGL | SDL_GL_DOUBLEBUFFER | SDL_HWPALETTE | SDL_RESIZABLE | SDL_HWSURFACE | SDL_HWACCEL)
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
+	SDL_SetVideoMode(processingState.w, processingState.h, bpp, videoFlags)
+	SDL_WM_SetCaption(processingState.winTitle, processingState.iconTitle)
+	
+	glViewport(0, 0, processingState.dispW, processingState.dispH)
 	glClearColor(0.0, 0.0, 0.0, 0.0)
 	glClearDepth(1.0)			 
 	glDepthFunc(GL_LESS)	 
@@ -31,7 +80,7 @@ macro setup(body)
 	glMatrixMode(GL_PROJECTION)
 	glLoadIdentity()
 	
-	gluPerspective(45.0,width/height,0.1,100.0)
+	gluPerspective(45.0,processingState.w/processingState.h,0.1,100.0)
 	
 	glMatrixMode(GL_MODELVIEW)
 	
@@ -40,7 +89,7 @@ macro setup(body)
 
 	$body	
 
-	SDL_gl_SwapBuffers()
+	SDL_GL_SwapBuffers()
 end
 
 macro draw(body)
@@ -50,22 +99,45 @@ macro draw(body)
 
 		$body
 
-		SDL_gl_SwapBuffers()
+		SDL_GL_SwapBuffers()
 	end
 end
 
 # Environment
 
 #cursor
-#displayHeight
-#displayWidth
+
+function displayHeight(howHigh)
+	global processingState
+	processingState.dispH = howHigh
+end
+
+function displayWidth(howWide)
+	global processingState
+	processingState.dispW = howWide
+	
+end
+
 #focused
 #frameCount
 #frameRate
-#height
+
+function height(howHigh)
+	global processingState
+	processingState.h = howHigh
+end
+
 #noCursor
-#size
-#width
+
+function size(howWide, howHigh)
+	width(howWide)
+	height(howHigh)
+end
+
+function width(howWide)
+	global processingState
+	processingState.w = howWide
+end
 
 # Shape
 
@@ -147,20 +219,21 @@ end
 #box
 
 function sphere(xcent,ycent,radius)
-    global Sdet
+    global processingState
     shapeList = glGenLists(1)
     glNewList(shapeList, GL_COMPILE)
         quad = gluNewQuadric()    
         gluQuadricDrawStyle(quad, GLU_FILL)
         glTranslate(xcent,ycent)
-        gluSphere(quad,radius,Sdet,Sdet)
+        gluSphere(quad,radius,processingState.Sdet,processingState.Sdet)
         glTranslate(-xcent,-ycent)
         gluDeleteQuadric(quad)
     glEndList()
 end
 
 function sphereDetail(detail)
-    global Sdet = detail
+    global processingState
+    processingState.Sdet = detail
 end
 
 ## Attributes
@@ -210,14 +283,15 @@ end
 #colorMode
 
 function fill(r, g, b, a)
-    global _no_fill
-    if _no_fill == false
+    global processingState
+    if processingState.noFill == false
         glColor(r, g, b, a)
     end
 end
 
 function noFill()
-    _no_fill = ( _no_fill ? false : true )
+    global processingState
+    processingState.noFill = (processingState.noFill ? false : true)
 end
 
 #noStroke
