@@ -3,10 +3,56 @@ using OpenGL
 
 module Processing
 
+export @setup, @draw
+
 # necessary globals
 
 global Sdet
 global _no_fill
+
+# macros to simulate Processing environment
+
+macro setup(body)
+	SDL_Init(SDL_INIT_VIDEO)
+	videoFlags = (SDL_OPENGL | SDL_GL_DOUBLEBUFFER | SDL_HWPALETTE | SDL_RESIZABLE)
+	videoFlags = (videoFlags | SDL_HWSURFACE)
+	videoFlags = (videoFlags | SDL_HWACCEL)
+	SDL_gl_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
+	SDL_SetVideoMode(width, height, bpp, videoFlags)
+	SDL_wm_SetCaption(wintitle, icontitle)
+	
+	glViewPort(0, 0, width, height)
+	glClearColor(0.0, 0.0, 0.0, 0.0)
+	glClearDepth(1.0)			 
+	glDepthFunc(GL_LESS)	 
+	glEnable(GL_DEPTH_TEST)
+	glShadeModel(GL_SMOOTH)
+	
+	glMatrixMode(GL_PROJECTION)
+	glLoadIdentity()
+	
+	gluPerspective(45.0,width/height,0.1,100.0)
+	
+	glMatrixMode(GL_MODELVIEW)
+	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+	glLoadIdentity()
+
+	$body	
+
+	SDL_gl_SwapBuffers()
+end
+
+macro draw(body)
+	while true
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		glLoadIdentity()
+
+		$body
+
+		SDL_gl_SwapBuffers()
+	end
+end
 
 # Environment
 
