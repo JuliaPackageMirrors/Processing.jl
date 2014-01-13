@@ -1,10 +1,14 @@
-global OpenGLver="3.3"
-using OpenGL
+global OpenGLver="3.2"
 
 module Processing
 
+using OpenGL
+using SDL
+
+#include("constants.jl")
+
 export @setup, @draw
-export displayHeight, displayWidth, height, size, width
+export displayHeight, displayWidth, height, winSize, width
 # export cursor focused, frameCount, frameRate, noCursor
 # export createShape, loadShape
 export arc, ellipse, line, point, quad, rect, triangle
@@ -29,7 +33,7 @@ export blendMode
 # export textAlign, textLeading, textMode, textSize, textWidth,
 # export textAscent, textDescent
 
-# necessary global state structure (but, is it really necessary?)
+# state structures
 
 type stateStruct
 	Sdet::Real #sphere detail
@@ -38,11 +42,11 @@ type stateStruct
 	w::Integer #width of display window
 	dispH::Integer #height of display area
 	dispW::Integer #width of display area
-	wintitle::String #title of display window
-	icontitle::String #title of docked icon
+	winTitle::String #title of display window
+	iconTitle::String #title of docked icon
 	bpp::Integer #Bits Per Pixel (BPP)
 	
-	function processingState()
+	function stateStruct()
 		new(
 			5, #give spheres decent detail, but be kind to low-end systems
 			1, #don't fill by default
@@ -57,17 +61,16 @@ type stateStruct
 	end
 end
 
-global processingState = stateStruct()
-
 # macros to simulate Processing environment
 
 macro setup(body)
-	global processingState
+	processingState = stateStruct()
+	println(processingState)
 	
 	SDL_Init(SDL_INIT_VIDEO)
 	videoFlags = (SDL_OPENGL | SDL_GL_DOUBLEBUFFER | SDL_HWPALETTE | SDL_RESIZABLE | SDL_HWSURFACE | SDL_HWACCEL)
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
-	SDL_SetVideoMode(processingState.w, processingState.h, bpp, videoFlags)
+	SDL_SetVideoMode(processingState.w, processingState.h, processingState.bpp, videoFlags)
 	SDL_WM_SetCaption(processingState.winTitle, processingState.iconTitle)
 	
 	glViewport(0, 0, processingState.dispW, processingState.dispH)
@@ -87,7 +90,7 @@ macro setup(body)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	glLoadIdentity()
 
-	$body	
+	body
 
 	SDL_GL_SwapBuffers()
 end
@@ -97,7 +100,7 @@ macro draw(body)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glLoadIdentity()
 
-		$body
+		body
 
 		SDL_GL_SwapBuffers()
 	end
@@ -108,14 +111,11 @@ end
 #cursor
 
 function displayHeight(howHigh)
-	global processingState
 	processingState.dispH = howHigh
 end
 
 function displayWidth(howWide)
-	global processingState
 	processingState.dispW = howWide
-	
 end
 
 #focused
@@ -123,19 +123,17 @@ end
 #frameRate
 
 function height(howHigh)
-	global processingState
 	processingState.h = howHigh
 end
 
 #noCursor
 
-function size(howWide, howHigh)
+function winSize(howWide, howHigh)
 	width(howWide)
 	height(howHigh)
 end
 
 function width(howWide)
-	global processingState
 	processingState.w = howWide
 end
 
@@ -146,7 +144,7 @@ end
 
 ## 2D Primitives
 
-function arc
+function arc()
     gluBeginCurve()
     gluEndCurve()
 end
@@ -219,7 +217,6 @@ end
 #box
 
 function sphere(xcent,ycent,radius)
-    global processingState
     shapeList = glGenLists(1)
     glNewList(shapeList, GL_COMPILE)
         quad = gluNewQuadric()    
@@ -232,7 +229,6 @@ function sphere(xcent,ycent,radius)
 end
 
 function sphereDetail(detail)
-    global processingState
     processingState.Sdet = detail
 end
 
@@ -248,14 +244,14 @@ end
 
 ## Vertex
 
-function beginShape
+function beginShape()
     glBegin()
 end
 
 #bezierVertex
 #curveVertex
 
-function endShape
+function endShape()
     glEnd()
 end
 
@@ -283,14 +279,12 @@ end
 #colorMode
 
 function fill(r, g, b, a)
-    global processingState
     if processingState.noFill == false
         glColor(r, g, b, a)
     end
 end
 
 function noFill()
-    global processingState
     processingState.noFill = (processingState.noFill ? false : true)
 end
 
@@ -340,7 +334,7 @@ end
 
 # Rendering
 
-function blendMode
+function blendMode()
     glEnable(GL_SRC_ALPHA, GL_ONE)
 end
 
@@ -375,4 +369,4 @@ end
 #textAscent
 #textDescent
 
-end
+end # module Processing
