@@ -8,7 +8,7 @@ import Base.Graphics: width, height
 
 #include("constants.jl")
 
-export animate
+export animate, coordSystem
 export height, width, displayHeight, displayWidth
 # export cursor focused, frameCount, frameRate, noCursor
 # export createShape, loadShape
@@ -80,7 +80,6 @@ s = Tk.cairo_surface(c) #main drawing surface
 
 # initialize simulated Processing environment
 
-Base.Graphics.set_coords(cr, 0, 0, state.w, state.h, state.left, state.right, state.top, state.bottom)
 Cairo.set_source(cr, state.bgCol)
 Cairo.paint(cr)
 Cairo.set_source(cr, state.strokeCol)
@@ -93,6 +92,11 @@ Cairo.set_line_width(cr, 1) # a pleasing default line width
 function animate()
     Tk.reveal(c)
     Tk.update()
+end
+
+# allow user to control coordinate system
+function coordSystem(left, right, top, bottom)
+    Base.Graphics.set_coords(cr, 0, 0, state.w, state.h, left, right, top, bottom)
 end
 
 # Environment
