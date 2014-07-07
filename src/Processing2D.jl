@@ -94,6 +94,7 @@ Cairo.set_line_width(cr, 1) # a pleasing default line width
 function animate()
     Tk.reveal(c)
     Tk.update()
+    Cairo.new_path(cr)
 end
 
 # allow user to control coordinate system
@@ -138,7 +139,7 @@ end
 ## 2D Primitives
 
 function arc(xcent, ycent, radius, angle1, angle2)
-    Cairo.new_path(cr)
+    Cairo.new_sub_path(cr)
     Cairo.arc(cr, xcent, ycent, radius, angle1, angle2)
     if state.strokeStuff
         Cairo.set_source(cr, state.strokeCol)
@@ -152,7 +153,6 @@ end
 
 function ellipse(xcent, ycent, ellipseW, ellipseH)
     Cairo.save(cr)
-    Cairo.new_path(cr)
     Cairo.move_to(cr, xcent, ycent)
     Cairo.scale(cr, ellipseW, ellipseH)
     Cairo.new_sub_path(cr)
@@ -169,21 +169,15 @@ function ellipse(xcent, ycent, ellipseW, ellipseH)
 end
 
 function line(x1, y1, x2, y2)
-    Cairo.new_path(cr)
     Cairo.move_to(cr,x1,y1)
     Cairo.line_to(cr,x2,y2)
     if state.strokeStuff
         Cairo.set_source(cr, state.strokeCol)
-        Cairo.stroke_preserve(cr)
-    end
-    if state.fillStuff
-        Cairo.set_source(cr, state.fillCol)
-        Cairo.fill(cr)
+        Cairo.stroke(cr)
     end
 end
 
 function point(x, y)
-    Cairo.new_path(cr)
     Cairo.move_to(cr,x,y)
     dx, dy = Cairo.device_to_user_distance!(cr,[1., 0.])
     Cairo.rectangle(cr,x,y,dx,dx)
@@ -194,7 +188,6 @@ function point(x, y)
 end
 
 function quad(x1, y1, x2, y2, x3, y3, x4, y4)
-    Cairo.new_path(cr)
     Cairo.move_to(cr, x1, y1)
     Cairo.line_to(cr, x2, y2)
     Cairo.line_to(cr, x3, y3)
@@ -211,7 +204,6 @@ function quad(x1, y1, x2, y2, x3, y3, x4, y4)
 end
 
 function rect(xcent, ycent, width, height)
-    Cairo.new_path(cr)
     Cairo.rectangle(cr, xcent, ycent, width, height)
     if state.strokeStuff
         Cairo.set_source(cr, state.strokeCol)
@@ -224,7 +216,6 @@ function rect(xcent, ycent, width, height)
 end
 
 function triangle(x1,y1,x2,y2,x3,y3)
-    Cairo.new_path(cr)
     Cairo.move_to(cr, x1, y1)
     Cairo.line_to(cr, x2, y2)
     Cairo.line_to(cr, x3, y3)
@@ -242,7 +233,6 @@ end
 ## Curves
 
 function bezier(x1, y1, x2, y2, x3, y3, x4, y4)
-    Cairo.new_path(cr)
     Cairo.move_to(cr, x1, y1);
     Cairo.curve_to(cr, x2, y2, x3, y3, x4, y4);
     if state.strokeStuff
@@ -343,7 +333,7 @@ end
 ## Setting
 
 function background(r, g, b, a)
-    state.bgCol = RGBA(r, g, b, a)
+    state.bgCol = RGB(r, g, b)
     Cairo.set_source(cr, state.bgCol)
     Cairo.paint(cr)
 end
@@ -470,7 +460,6 @@ end
 #loadFont
 
 function text(str::String, x, y)
-    Cairo.new_path(cr)
     Cairo.move_to(cr, x, y);
     Cairo.text_path(cr, str);
     if state.fillStuff
