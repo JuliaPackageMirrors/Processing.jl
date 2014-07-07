@@ -1,4 +1,8 @@
-#rectmode/ellipsemode/mousebutton
+# this constants come from and are inspired by the pyprocessing project
+# (https://code.google.com/p/pyprocessing/source/browse/trunk/pyprocessing/constants.py)
+# with some slight adjustments
+
+#modes
 const CORNER = 1
 export CORNER
 const CORNERS = 2
@@ -8,7 +12,7 @@ export CENTER
 const RADIUS = 4
 export RADIUS
 
-#textalign
+#text alignment
 const TOP = 7
 export TOP
 const BOTTOM = 8
@@ -22,36 +26,40 @@ const textAlignConst = [CENTER=>"center", TOP=>"top",
 export textAlignConst
 
 # colorMode
-const RGB=0
-export RGB
-const HSB=1
-export HSB
+#const RGB=0
+#export RGB
+#const HSB=1
+#export HSB
 
 # math
 const PI = pi
 export PI
-const TWO_PI = PI*2
+const TWO_PI = pi*2
 export TWO_PI
-const HALF_PI = PI/2
+const HALF_PI = pi/2
 export HALF_PI
+const QUARTER_PI = pi/4
+export QUARTER_PI
+const TAU = Tau.tau
+export TAU
 
 # hints
-const ENABLE_DEPTH_TEST = "ENABLE_DEPTH_TEST"
-export ENABLE_DEPTH_TEST
-const DISABLE_DEPTH_TEST = "DISABLE_DEPTH_TEST"
-export DISABLE_DEPTH_TEST
-const DISABLE_POLYGON_SMOOTH = "DISABLE_POLYGON_SMOOTH"
-export DISABLE_POLYGON_SMOOTH
-const DOUBLE_FLIP_POLICY = "DOUBLE_FLIP_POLICY"
-export DOUBLE_FLIP_POLICY
-const SINGLE_FLIP_POLICY = "SINGLE_FLIP_POLICY"
-export SINGLE_FLIP_POLICY
-const FBO_FLIP_POLICY = "FBO_FLIP_POLICY"
-export FBO_FLIP_POLICY
-const ACCUM_FLIP_POLICY = "ACCUM_FLIP_POLICY"
-export ACCUM_FLIP_POLICY
-const BACKUP_FLIP_POLICY = "BACKUP_FLIP_POLICY"
-export BACKUP_FLIP_POLICY
+#const ENABLE_DEPTH_TEST = "ENABLE_DEPTH_TEST"
+#export ENABLE_DEPTH_TEST
+#const DISABLE_DEPTH_TEST = "DISABLE_DEPTH_TEST"
+#export DISABLE_DEPTH_TEST
+#const DISABLE_POLYGON_SMOOTH = "DISABLE_POLYGON_SMOOTH"
+#export DISABLE_POLYGON_SMOOTH
+#const DOUBLE_FLIP_POLICY = "DOUBLE_FLIP_POLICY"
+#export DOUBLE_FLIP_POLICY
+#const SINGLE_FLIP_POLICY = "SINGLE_FLIP_POLICY"
+#export SINGLE_FLIP_POLICY
+#const FBO_FLIP_POLICY = "FBO_FLIP_POLICY"
+#export FBO_FLIP_POLICY
+#const ACCUM_FLIP_POLICY = "ACCUM_FLIP_POLICY"
+#export ACCUM_FLIP_POLICY
+#const BACKUP_FLIP_POLICY = "BACKUP_FLIP_POLICY"
+#export BACKUP_FLIP_POLICY
 
 #filter modes
 const THRESHOLD = "THRESOLD"
@@ -71,23 +79,23 @@ export ERODE
 const DILATE = "DILATE"
 export DILATE
 
-# shapes 
-const POINTS = OpenGLStd.POINTS
-export POINTS
-const LINES = OpenGLStd.LINES
-export LINES
-const TRIANGLES = OpenGLStd.TRIANGLES
-export TRIANGLES
-const TRIANGLE_FAN = OpenGLStd.TRIANGLE_FAN
-export TRIANGLE_FAN
-const TRIANGLE_STRIP = OpenGLStd.TRIANGLE_STRIP
-export TRIANGLE_STRIP
-const QUADS = OpenGLStd.QUADS
-export QUADS
-const QUAD_STRIP = OpenGLStd.QUAD_STRIP
-export QUAD_STRIP
-const CLOSE = 1
-export CLOSE
+# shapes
+#const POINTS = OpenGLStd.POINTS
+#export POINTS
+#const LINES = OpenGLStd.LINES
+#export LINES
+#const TRIANGLES = OpenGLStd.TRIANGLES
+#export TRIANGLES
+#const TRIANGLE_FAN = OpenGLStd.TRIANGLE_FAN
+#export TRIANGLE_FAN
+#const TRIANGLE_STRIP = OpenGLStd.TRIANGLE_STRIP
+#export TRIANGLE_STRIP
+#const QUADS = OpenGLStd.QUADS
+#export QUADS
+#const QUAD_STRIP = OpenGLStd.QUAD_STRIP
+#export QUAD_STRIP
+#const CLOSE = 1
+#export CLOSE
 
 #blend modes
 const BLEND = 1
@@ -119,36 +127,36 @@ export DODGE
 const BURN = 14
 export BURN
 
-#texture modes
+# texture modes
 const NORMALIZED = "NORMALIZED"
 export NORMALIZED
 const IMAGE = "IMAGE"
 export IMAGE
 
-# image formats
-const RGB = "RGB"
-export RGB
-const ARGB = "RGBA"
-export ARGB
-const ALPHA = "A"
-export ALPHA
+# color formats
+#const RGB = "RGB"
+#export RGB
+#const ARGB = "RGBA"
+#export ARGB
+#const ALPHA = "A"
+#export ALPHA
 
-#stroke join modes
+# stroke join modes
 const MITER = "MITER"
 export MITER
 const BEVEL = "BEVEL"
 export BEVEL
-const ROUND = "ROUND"
-export ROUND
 
-#strokecap modes
+# stroke cap modes
 const SQUARE = "SQUARE"
 export SQUARE
 const PROJECT = "PROJECT"
 export PROJECT
+const ROUND = "ROUND"
+export ROUND
 
 # cursor types
-const ARROW = None
+const ARROW = "arrow"
 export ARROW
 const CROSS = "crosshair"
 export CROSS

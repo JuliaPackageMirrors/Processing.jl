@@ -8,10 +8,10 @@ coordSystem(-1, 1, 1, -1) # user-defined coordinate system (x-axis min = -1,
 						  #
 						  # I can just think easier this way...
 						  #
-						  # default coordinate system is in pixels with top-left
-						  # corner of drawing surface labeled (0,0), just like
-						  # Processing's default coordinate system
-
+						  # default coordinate system is in units of pixels with
+						  # top-left corner of drawing surface labeled (0,0),
+						  # just like Processing's default coordinate system
+smooth()
 ellipse(0,0,0.3,0.5)
 ellipse(0,0,0.2,0.2)
 triangle(.3, .75, .58, .20, .86, .75)

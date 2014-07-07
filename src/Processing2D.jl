@@ -3,34 +3,37 @@ module ProcessingStd
 using Tk
 using Cairo
 using Color
+using Tau
 
-import Base.Graphics: width, height
-
-#include("constants.jl")
+include("constants.jl")
 
 export animate, coordSystem
-export height, width, displayHeight, displayWidth
-# export cursor focused, frameCount, frameRate, noCursor
+export Height, Width, displayHeight, displayWidth
+export focused
+# export cursor, frameCount, frameRate, noCursor
 # export createShape, loadShape
 export arc, ellipse, line, point, quad, rect, triangle
-# export bezier, bezierDetail, bezierPoint, bezierTangent, curve, curveDetail, curvePoint, curveTangent, curveTightness
-export strokeWeight
-# export ellipseMode, noSmooth, rectMode, smooth, strokeCap, strokeJoin
+export bezier
+# export bezierDetail, bezierPoint, bezierTangent, curve, curveDetail, curvePoint, curveTangent, curveTightness
+export strokeWeight, strokeCap, strokeJoin, noSmooth, smooth
+# export ellipseMode, rectMode
 # export beginShape, endShape, vertex
 # export bezierVertex, curveVertex, quadraticVertex
 # export shape, shapeMode
-export background, fill, noFill
-export colorMode, noStroke, stroke
-# export alpha, blue, brightness, color, green, hue, lerpColor, red, saturation
+export background, fill, noFill, colorMode, noStroke, stroke
+# export applyMatrix, popMatrix, printMatrix
+# export pushMatrix, resetMatrix, rotate, rotateX, rotateY, rotateZ, scale, shearX, shearY, translate
+export alpha, blue, brightness, color, green, hue, lerpColor, red, saturation
 # export createImage
 # export image, imageMode, loadImage, noTint, requestImage, tint
 # export texture, textureMode, textureWrap
 # export blend, copy, filter, get, loadPixels, set, updatePixels
 # export blendMode
-# export createGraphics, hint
-# export loadShader, resetShader, shader
-# export createFont, loadFont, text, textFont
-# export textAlign, textLeading, textMode, textSize, textWidth,
+# export createGraphics
+export createFont, text, textFont
+# export loadFont
+export textSize, textWidth
+# export textAlign, textLeading, textMode
 # export textAscent, textDescent
 
 # state variables
@@ -68,7 +71,6 @@ type stateStruct
 end
 
 # initialize state structure and open drawing window
-
 state = stateStruct(RGB(0.94, 0.92, 0.9), true, RGB(0.7,0.7,0.7), true, RGB(0,0,0), 275, 275, -1., 1., 1., -1., "RGB", "Processing.jl")
 export state
 
@@ -106,20 +108,26 @@ displayHeight = tcl("winfo", "screenwidth", win)
 displayWidth = tcl("winfo", "screenheight", win)
 
 #cursor
-#focused
+
+function focused()
+    if isempty(tcl("focus"))
+        return false
+    else
+        return true
+    end
+end
+
 #frameCount
 #frameRate
 
-function height(howHigh)
-	state.h = howHigh
-    tcl("wm", "geometry", win, "$(w)x$(h)")
+function Height()
+	return state.h
 end
 
 #noCursor
 
-function width(howWide)
-	state.w = howWide
-    tcl("wm", "geometry", win, "$(w)x$(h)")
+function Width()
+	return state.w
 end
 
 # Shape
@@ -233,7 +241,16 @@ end
 
 ## Curves
 
-#bezier
+function bezier(x1, y1, x2, y2, x3, y3, x4, y4)
+    Cairo.new_path(cr)
+    Cairo.move_to(cr, x1, y1);
+    Cairo.curve_to(cr, x2, y2, x3, y3, x4, y4);
+    if state.strokeStuff
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke_preserve(cr)
+    end
+end
+
 #bezierDetail
 #bezierPoint
 #bezierTangent
@@ -246,11 +263,36 @@ end
 ## Attributes
 
 #ellipseMode
-#noSmooth
+
+function noSmooth()
+    Cairo.set_antialias(cr, Cairo.ANTIALIAS_NONE)
+end
+
 #rectMode
-#smooth
-#strokeCap
-#strokeJoin
+
+function smooth()
+    Cairo.set_antialias(cr, Cairo.ANTIALIAS_BEST)
+end
+
+function strokeCap(capType)
+    if capType == ROUND
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_CAP_ROUND)
+    elseif capType == SQUARE
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_CAP_BUTT)
+    elseif capType == PROJECT
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_CAP_SQUARE)
+    end
+end
+
+function strokeJoin(joinType)
+    if joinType == MITER
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_MITER)
+    elseif joinType == BEVEL
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_BEVEL)
+    elseif joinType == ROUND
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_ROUND)
+    end
+end
 
 function strokeWeight(newWeight)
     Cairo.set_line_width(cr, newWeight)
@@ -279,6 +321,22 @@ end
 
 #shape
 #shapeMode
+
+## Transform
+
+#applyMatrix()
+#popMatrix()
+#printMatrix()
+#pushMatrix()
+#resetMatrix()
+#rotate()
+#rotateX()
+#rotateY()
+#rotateZ()
+#scale()
+#shearX()
+#shearY()
+#translate()
 
 # Color
 
@@ -324,15 +382,44 @@ end
 
 ## Creating & Reading
 
-#alpha
-#blue
-#brightness
-#color
-#green
-#hue
-#lerpColor
-#red
-#saturation
+function alpha(c::ColorValue)
+    return c.a
+end
+
+function blue(c::ColorValue)
+    return c.b
+end
+
+function brightness(c::ColorValue)
+    hsv = convert(HSV, c)
+    return hsv.v
+end
+
+function color(r, g, b)
+    return RGB(r, g, b)
+end
+
+function green(c::ColorValue)
+    return c.g
+end
+
+function hue(c::ColorValue)
+    hsv = convert(HSV, c)
+    return hsv.h
+end
+
+function lerpColor(c1::ColorValue, c2::ColorValue, amt::Float32)
+    return weighted_color_mean(amt, c1, c2)
+end
+
+function red(c::ColorValue)
+    return c.r
+end
+
+function saturation(c::ColorValue)
+    hsv = convert(HSV, c)
+    return hsv.s
+end
 
 # Image
 
@@ -366,38 +453,68 @@ end
 # Rendering
 
 # function blendMode()
-#     glEnable(GL_SRC_ALPHA, GL_ONE)
+#
 # end
 
 #createGraphics
-#hint
-
-## Shaders
-
-#loadShader
-#resetShader
-#shader
 
 # Typography
 
 ## Loading & Displaying
 
-#createFont
+function createFont(fontName::String, fontSize::Float32)
+    Cairo.set_font_face(cr, fontName)
+    Cairo.set_font_size(cr, fontSize)
+end
+
 #loadFont
-#text
-#textFont
+
+function text(str::String, x, y)
+    Cairo.new_path(cr)
+    Cairo.move_to(cr, x, y);
+    Cairo.text_path(cr, str);
+    if state.fillStuff
+        Cairo.set_source(cr, state.fillCol)
+        Cairo.fill_preserve(cr)
+    end
+    if state.strokeStuff
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke(cr)
+    end
+end
+
+function textFont(fontName::String)
+    Cairo.set_font_face(cr, fontName)
+end
 
 ## Attributes
 
-#textAlign
+#function textAlign()
+#
+#end
+
 #textLeading
 #textMode
-#textSize
-#textWidth
+
+function textSize(fontSize)
+    Cairo.set_font_size(cr, fontSize)
+end
+
+function textWidth(str::String)
+    extents = Cairo.text_extents(cr, str)
+    return extents[3]
+end
 
 ## Metrics
 
-#textAscent
-#textDescent
+#function textAscent()
+#    extents = Cairo.scaled_font_extents(cr, str)
+#    return extents[1]
+#end
+
+#function textDescent()
+#    extents = Cairo.scaled_font_extents(cr, str)
+#    return extents[2]
+#end
 
 end # module Processing
