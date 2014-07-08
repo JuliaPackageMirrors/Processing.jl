@@ -1,4 +1,7 @@
 Color
 Tk
+Gtk
 Cairo
 Tau
+GLFW
+julia 0.3-

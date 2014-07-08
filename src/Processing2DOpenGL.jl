@@ -1,11 +1,13 @@
 module ProcessingStd
 
-using Tk
-using Cairo
+import GLFW
+using ModernGL
+using GLUtil
+using GLText
+using GLWindow
+using Events
 using Color
 using Tau
-
-import Cairo: rotate, translate, scale
 
 include("constants.jl")
 
@@ -111,108 +113,37 @@ function size(w, h)
     state.w = w
     state.h = h
 
-    win = Tk.Window(state.title, state.w, state.h) #main drawing window
-    c = Tk.Canvas(win)
-    Tk.pack(c)
-    cr = Tk.getgc(c) #main drawing context
-    s = Tk.cairo_surface(c) #main drawing surface
+    GLFW.Init()
 
-    c.mouse.button1press = function (c, x, y)
-        state.mouse1Pressed = true
-    end
-    c.mouse.button2press = function (c, x, y)
-        state.mouse2Pressed = true
-    end
-    c.mouse.button3press = function (c, x, y)
-        state.mouse3Pressed = true
-    end
-    c.mouse.button1release = function (c, x, y)
-        state.mouse1Pressed = false
-        state.mouse1Dragged = false
-    end
-    c.mouse.button2release = function (c, x, y)
-        state.mouse2Pressed = false
-    end
-    c.mouse.button3release = function (c, x, y)
-        state.mouse3Pressed = false
-    end
-    c.mouse.motion = function (c, x, y)
-        state.pmX = state.cmX; state.pmY = state.cmY
-        state.cmX = x; state.cmY = y
-    end
-    c.mouse.button1motion = function (c, x, y)
-        state.pmX = state.cmX; state.pmY = state.cmY
-        state.cmX = x; state.cmY = y
-        state.mouse1Dragged = true
+    @osx_only begin
+        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
+        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
+        GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
+        GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
     end
 
-    # initialize simulated Processing environment
-
-    set_source(cr, state.bgCol)
-    paint(cr)
-    set_source(cr, state.strokeCol)
-    Tk.reveal(c)
-    Tk.update()
-
-    set_line_width(cr, 1) # a pleasing default line width
-
-    return win, c, cr, s
+    state.window = GLFW.CreateWindow(state.w, state.h, "Processing.jl")
+    GLFW.MakeContextCurrent(state.window)
 end
 
 function size()
-    win = Tk.Window(state.title, state.w, state.h) #main drawing window
-    c = Tk.Canvas(win)
-    Tk.pack(c)
-    cr = Tk.getgc(c) #main drawing context
-    s = Tk.cairo_surface(c) #main drawing surface
+    GLFW.Init()
 
-    c.mouse.button1press = function (c, x, y)
-        state.mouse1Pressed = true
-    end
-    c.mouse.button2press = function (c, x, y)
-        state.mouse2Pressed = true
-    end
-    c.mouse.button3press = function (c, x, y)
-        state.mouse3Pressed = true
-    end
-    c.mouse.button1release = function (c, x, y)
-        state.mouse1Pressed = false
-        state.mouse1Dragged = false
-    end
-    c.mouse.button2release = function (c, x, y)
-        state.mouse2Pressed = false
-    end
-    c.mouse.button3release = function (c, x, y)
-        state.mouse3Pressed = false
-    end
-    c.mouse.motion = function (c, x, y)
-        state.pmX = state.cmX; state.pmY = state.cmY
-        state.cmX = x; state.cmY = y
-    end
-    c.mouse.button1motion = function (c, x, y)
-        state.pmX = state.cmX; state.pmY = state.cmY
-        state.cmX = x; state.cmY = y
-        state.mouse1Dragged = true
+    @osx_only begin
+        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
+        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
+        GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
+        GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
     end
 
-    # initialize simulated Processing environment
-
-    set_source(cr, state.bgCol)
-    paint(cr)
-    set_source(cr, state.strokeCol)
-    Tk.reveal(c)
-    Tk.update()
-
-    set_line_width(cr, 1) # a pleasing default line width
-
-    return win, c, cr, s
+    state.window = GLFW.CreateWindow(state.w, state.h, "Processing.jl")
+    GLFW.MakeContextCurrent(state.window)
 end
 
 # special Processing.jl animate() command for smoother animations
 function animate()
-    Tk.reveal(c)
-    Tk.update()
-    new_path(cr)
+    GLFW.SwapBuffers(state.window)
+    GLFW.PollEvents()
 end
 
 # allow user to control coordinate system
@@ -228,28 +159,22 @@ displayWidth = tcl("winfo", "screenheight", win)
 
 function cursor(cursorType)
     if cursorType == ARROW
-        tcl("cursors", "arrow")
+
     elseif cursorType == CROSS
-        tcl("cursors", "cross")
+
     elseif cursorType == HAND
-        @linux_only tcl("cursors", "hand1")
-        @windows_only tcl("cursors", "hand1")
-        @osx_only tcl("cursors", "pointinghand")
+
     elseif cursorType == MOVE
-        @linux_only tcl("cursors", "target")
-        @windows_only tcl("cursors", "size")
-        @osx_only tcl("cursors", "pointinghand")
+
     elseif cursorType == TEXT
-        tcl("cursors", "ibeam")
+
     elseif cursorType == WAIT
-        @linux_only tcl("cursors", "clock")
-        @windows_only tcl("cursors", "wait")
-        @osx_only tcl("cursors", "spinning")
+
     end
 end
 
 function focused()
-    if isempty(tcl("focus"))
+    if
         return false
     else
         return true
@@ -260,15 +185,17 @@ end
 #frameRate
 
 function Height()
-	return state.h
+	(pixelwidth::Float64, pixelheight::Float64) = GLFW.GetFramebufferSize(window)
+    return pixelheight
 end
 
 function noCursor()
-    @windows_only tcl("cursors", "no")
+
 end
 
 function Width()
-	return state.w
+	(pixelwidth::Float64, pixelheight::Float64) = GLFW.GetFramebufferSize(window)
+    return pixelwidth
 end
 
 # Shape
@@ -429,7 +356,7 @@ function ellipseMode(eMode)
 end
 
 function noSmooth()
-    set_antialias(cr, Cairo.ANTIALIAS_NONE)
+
 end
 
 function rectMode(rMode)
@@ -437,31 +364,31 @@ function rectMode(rMode)
 end
 
 function smooth()
-    set_antialias(cr, Cairo.ANTIALIAS_BEST)
+
 end
 
 function strokeCap(capType)
     if capType == ROUND
-        set_line_cap(cr, Cairo.CAIRO_LINE_CAP_ROUND)
+
     elseif capType == SQUARE
-        set_line_cap(cr, Cairo.CAIRO_LINE_CAP_BUTT)
+
     elseif capType == PROJECT
-        set_line_cap(cr, Cairo.CAIRO_LINE_CAP_SQUARE)
+
     end
 end
 
 function strokeJoin(joinType)
     if joinType == MITER
-        set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_MITER)
+
     elseif joinType == BEVEL
-        set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_BEVEL)
+
     elseif joinType == ROUND
-        set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_ROUND)
+
     end
 end
 
 function strokeWeight(newWeight)
-    set_line_width(cr, newWeight)
+
 end
 
 ## Vertex
@@ -515,11 +442,7 @@ function mouseMoved()
 end
 
 function mousePressed()
-    if state.mouse1Pressed || state.mouse2Pressed || state.mouse3Pressed
-        return true
-    else
-        return false
-    end
+    return pressed = GLFW.GetMouseButton(window, GLFW.MOUSE_BUTTON_LEFT) == GLFW.PRESS
 end
 
 function mouseReleased()
@@ -531,11 +454,13 @@ function mouseWheel()
 end
 
 function mouseX()
-    return state.cmX
+    (mx, my) = GLFW.GetCursorPos(window)
+    return mx
 end
 
 function mouseY()
-    return state.cmX
+    (mx, my) = GLFW.GetCursorPos(window)
+    return my
 end
 
 function pmouseX()
@@ -551,34 +476,34 @@ end
 #applyMatrix()
 
 function popMatrix()
-    restore(cr)
+
 end
 
 function printMatrix()
-    println(get_matrix(cr))
+
 end
 
 function pushMatrix()
-    save(cr)
+
 end
 
 function resetMatrix()
-    identity_matrix(cr)
+
 end
 
 function rotate(ang)
-    Cairo.rotate(cr, ang)
+
 end
 
 function scale(sx, sy)
-    Cairo.scale(cr, sx, sy)
+
 end
 
 #shearX()
 #shearY()
 
 function translate(x, y)
-    Cairo.translate(cr, x, y)
+
 end
 
 # Color
@@ -587,8 +512,8 @@ end
 
 function background(r, g, b, a)
     state.bgCol = RGB(r, g, b)
-    set_source(cr, state.bgCol)
-    paint(cr)
+    glClearColor(r, g, b, a)
+    glClear(GL_COLOR_BUFFER_BIT)
 end
 
 function colorMode(mode::String)
@@ -673,13 +598,13 @@ end
 ## Loading & Displaying
 
 function image(img, x, y, w, h)
-    Cairo.image(cr, img, x, y, w, h)
+
 end
 
 #imageMode
 
 function loadImage(fileName::String)
-    return read_from_png(fileName)
+    return
 end
 
 function noTint()
@@ -721,27 +646,17 @@ end
 ## Loading & Displaying
 
 function createFont(fontName::String, fontSize::Float32)
-    set_font_face(cr, fontName)
-    set_font_size(cr, fontSize)
+
 end
 
 #loadFont
 
 function text(str::String, x, y)
-    move_to(cr, x, y);
-    text_path(cr, str);
-    if state.fillStuff
-        set_source(cr, state.fillCol)
-        fill_preserve(cr)
-    end
-    if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke(cr)
-    end
+
 end
 
 function textFont(fontName::String)
-    set_font_face(cr, fontName)
+
 end
 
 ## Attributes
@@ -754,12 +669,11 @@ end
 #textMode
 
 function textSize(fontSize)
-    set_font_size(cr, fontSize)
+
 end
 
 function textWidth(str::String)
-    extents = text_extents(cr, str)
-    return extents[3]
+
 end
 
 ## Metrics
