@@ -12,6 +12,14 @@ export CENTER
 const RADIUS = 4
 export RADIUS
 
+# arc modes
+const OPEN = 1
+export OPEN
+const PIE = 2
+export PIE
+const CHORD = 3
+export CHORD
+
 #text alignment
 const TOP = 7
 export TOP

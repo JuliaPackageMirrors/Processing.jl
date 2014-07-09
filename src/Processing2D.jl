@@ -5,12 +5,13 @@ using Cairo
 using Color
 using Tau
 
-import Cairo: rotate, translate, scale
+import Cairo: rotate, translate, scale, arc
 
 include("constants.jl")
 
 export animate, coordSystem
-export size, Height, Width, displayHeight, displayWidth
+export Height, Width, displayHeight, displayWidth
+# export size
 export focused, cursor, noCursor
 # export frameCount, frameRate
 # export createShape, loadShape
@@ -107,9 +108,9 @@ end
 state = stateStruct(RGB(0.94, 0.92, 0.9), true, RGB(0.7,0.7,0.7), true, RGB(0,0,0), 275, 275, -1., 1., 1., -1., "RGB", "Processing.jl", false, CENTER, CORNER, 0, 0, 0, 0, false, false, false, true, true, true, false)
 export state
 
-function size(w, h)
-    state.w = w
-    state.h = h
+#function size(w, h)
+#    state.w = w
+#    state.h = h
 
     win = Tk.Window(state.title, state.w, state.h) #main drawing window
     c = Tk.Canvas(win)
@@ -148,71 +149,71 @@ function size(w, h)
 
     # initialize simulated Processing environment
 
-    set_source(cr, state.bgCol)
-    paint(cr)
-    set_source(cr, state.strokeCol)
+    Cairo.set_source(cr, state.bgCol)
+    Cairo.paint(cr)
+    Cairo.set_source(cr, state.strokeCol)
     Tk.reveal(c)
     Tk.update()
 
-    set_line_width(cr, 1) # a pleasing default line width
+    Cairo.set_line_width(cr, 1) # a pleasing default line width
 
-    return win, c, cr, s
-end
+#    return win, c, cr, s
+#end
 
-function size()
-    win = Tk.Window(state.title, state.w, state.h) #main drawing window
-    c = Tk.Canvas(win)
-    Tk.pack(c)
-    cr = Tk.getgc(c) #main drawing context
-    s = Tk.cairo_surface(c) #main drawing surface
+#function size()
+#     win = Tk.Window(state.title, state.w, state.h) #main drawing window
+#     c = Tk.Canvas(win)
+#     Tk.pack(c)
+#     cr = Tk.getgc(c) #main drawing context
+#     s = Tk.cairo_surface(c) #main drawing surface
 
-    c.mouse.button1press = function (c, x, y)
-        state.mouse1Pressed = true
-    end
-    c.mouse.button2press = function (c, x, y)
-        state.mouse2Pressed = true
-    end
-    c.mouse.button3press = function (c, x, y)
-        state.mouse3Pressed = true
-    end
-    c.mouse.button1release = function (c, x, y)
-        state.mouse1Pressed = false
-        state.mouse1Dragged = false
-    end
-    c.mouse.button2release = function (c, x, y)
-        state.mouse2Pressed = false
-    end
-    c.mouse.button3release = function (c, x, y)
-        state.mouse3Pressed = false
-    end
-    c.mouse.motion = function (c, x, y)
-        state.pmX = state.cmX; state.pmY = state.cmY
-        state.cmX = x; state.cmY = y
-    end
-    c.mouse.button1motion = function (c, x, y)
-        state.pmX = state.cmX; state.pmY = state.cmY
-        state.cmX = x; state.cmY = y
-        state.mouse1Dragged = true
-    end
+#     c.mouse.button1press = function (c, x, y)
+#         state.mouse1Pressed = true
+#     end
+#     c.mouse.button2press = function (c, x, y)
+#         state.mouse2Pressed = true
+#     end
+#     c.mouse.button3press = function (c, x, y)
+#         state.mouse3Pressed = true
+#     end
+#     c.mouse.button1release = function (c, x, y)
+#         state.mouse1Pressed = false
+#         state.mouse1Dragged = false
+#     end
+#     c.mouse.button2release = function (c, x, y)
+#         state.mouse2Pressed = false
+#     end
+#     c.mouse.button3release = function (c, x, y)
+#         state.mouse3Pressed = false
+#     end
+#     c.mouse.motion = function (c, x, y)
+#         state.pmX = state.cmX; state.pmY = state.cmY
+#         state.cmX = x; state.cmY = y
+#     end
+#     c.mouse.button1motion = function (c, x, y)
+#         state.pmX = state.cmX; state.pmY = state.cmY
+#         state.cmX = x; state.cmY = y
+#         state.mouse1Dragged = true
+#     end
 
-    # initialize simulated Processing environment
+#     # initialize simulated Processing environment
 
-    set_source(cr, state.bgCol)
-    paint(cr)
-    set_source(cr, state.strokeCol)
-    Tk.reveal(c)
-    Tk.update()
+#     Cairo.set_source(cr, state.bgCol)
+#     Cairo.paint(cr)
+#     Cairo.set_source(cr, state.strokeCol)
+#     Tk.reveal(c)
+#     Tk.update()
 
-    set_line_width(cr, 1) # a pleasing default line width
+#     Cairo.set_line_width(cr, 1) # a pleasing default line width
 
-    return win, c, cr, s
-end
+#     return win, c, cr, s
+# end
 
 # special Processing.jl animate() command for smoother animations
 function animate()
     Tk.reveal(c)
     Tk.update()
-    new_path(cr)
+    Cairo.new_path(cr)
 end
 
 # allow user to control coordinate system
@@ -223,33 +224,33 @@ end
 # Environment
 
 # exported environment variables
-displayHeight = tcl("winfo", "screenwidth", win)
-displayWidth = tcl("winfo", "screenheight", win)
+displayHeight = Tk.tcl("winfo", "screenwidth", win)
+displayWidth = Tk.tcl("winfo", "screenheight", win)
 
 function cursor(cursorType)
     if cursorType == ARROW
-        tcl("cursors", "arrow")
+        Tk.tcl("cursors", "arrow")
     elseif cursorType == CROSS
-        tcl("cursors", "cross")
+        Tk.tcl("cursors", "cross")
     elseif cursorType == HAND
-        @linux_only tcl("cursors", "hand1")
-        @windows_only tcl("cursors", "hand1")
-        @osx_only tcl("cursors", "pointinghand")
+        @linux_only Tk.tcl("cursors", "hand1")
+        @windows_only Tk.tcl("cursors", "hand1")
+        @osx_only Tk.tcl("cursors", "pointinghand")
     elseif cursorType == MOVE
-        @linux_only tcl("cursors", "target")
-        @windows_only tcl("cursors", "size")
-        @osx_only tcl("cursors", "pointinghand")
+        @linux_only Tk.tcl("cursors", "target")
+        @windows_only Tk.tcl("cursors", "size")
+        @osx_only Tk.tcl("cursors", "pointinghand")
     elseif cursorType == TEXT
-        tcl("cursors", "ibeam")
+        Tk.tcl("cursors", "ibeam")
     elseif cursorType == WAIT
-        @linux_only tcl("cursors", "clock")
-        @windows_only tcl("cursors", "wait")
-        @osx_only tcl("cursors", "spinning")
+        @linux_only Tk.tcl("cursors", "clock")
+        @windows_only Tk.tcl("cursors", "wait")
+        @osx_only Tk.tcl("cursors", "spinning")
     end
 end
 
 function focused()
-    if isempty(tcl("focus"))
+    if isempty(Tk.tcl("focus"))
         return false
     else
         return true
@@ -264,7 +265,7 @@ function Height()
 end
 
 function noCursor()
-    @windows_only tcl("cursors", "no")
+    @windows_only Tk.tcl("cursors", "no")
 end
 
 function Width()
@@ -279,137 +280,137 @@ end
 ## 2D Primitives
 
 function arc(xcent, ycent, ellipseW, ellipseH, angle1, angle2, mode)
-    save(cr)
-    move_to(cr, xcent, ycent)
-    scale(cr, ellipseW, ellipseH)
-    new_sub_path(cr)
-    if mode == OPEN
-        arc(cr, 0, 0, 1, angle1, angle2)
+    Cairo.save(cr)
+    Cairo.translate(cr, xcent, ycent)
+    Cairo.scale(cr, ellipseW, ellipseH)
+    Cairo.new_sub_path(cr)
+    if mode == OPEN || mode == CHORD
+        Cairo.arc(cr, 0, 0, 1, angle1, angle2)
     elseif mode == PIE
     end
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke_preserve(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke_preserve(cr)
     end
     if state.fillStuff
-        set_source(cr, state.fillCol)
-        fill(cr)
+        Cairo.set_source(cr, state.fillCol)
+        Cairo.fill(cr)
     end
     if mode == CHORD
-        move_to(cos(angle1), sin(angle1))
-        line_to(cos(angle2), sin(angle2))
+        Cairo.move_to(cr, cos(angle1), sin(angle1))
+        Cairo.line_to(cr, cos(angle2), sin(angle2))
     end
-    restore(cr)
+    Cairo.restore(cr)
 end
 
 function ellipse(xcent, ycent, ellipseW, ellipseH)
-    save(cr)
+    Cairo.save(cr)
     if state.ellipseMode == RADIUS
-        move_to(cr, xcent, ycent)
-        scale(cr, ellipseW/2, ellipseH/2)
+        Cairo.translate(cr, xcent, ycent)
+        Cairo.scale(cr, ellipseW/2, ellipseH/2)
     elseif state.ellipseMode == CENTER
-        move_to(cr, xcent, ycent)
-        scale(cr, ellipseW, ellipseH)
+        Cairo.translate(cr, xcent, ycent)
+        Cairo.scale(cr, ellipseW, ellipseH)
     elseif state.ellipseMode == CORNER
-        move_to(cr, xcent+ellipseW/2, ycent+ellipseH/2)
-        scale(cr, ellipseW, ellipseH)
+        Cairo.translate(cr, xcent+ellipseW/2, ycent+ellipseH/2)
+        Cairo.scale(cr, ellipseW, ellipseH)
     elseif state.ellipseMode == CORNERS
-        move_to(cr, xcent, ycent)
-        scale(cr, ellipseW, ellipseH)
+        Cairo.translate(cr, xcent, ycent)
+        Cairo.scale(cr, ellipseW, ellipseH)
     end
-    new_sub_path(cr)
-    arc(cr, 0, 0, 1, 0, 2*pi)
+    Cairo.new_sub_path(cr)
+    Cairo.arc(cr, 0, 0, 1, 0, 2*pi)
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke_preserve(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke_preserve(cr)
     end
     if state.fillStuff
-        set_source(cr, state.fillCol)
-        fill(cr)
+        Cairo.set_source(cr, state.fillCol)
+        Cairo.fill(cr)
     end
-    restore(cr)
+    Cairo.restore(cr)
 end
 
 function line(x1, y1, x2, y2)
-    move_to(cr,x1,y1)
-    line_to(cr,x2,y2)
+    Cairo.move_to(cr,x1,y1)
+    Cairo.line_to(cr,x2,y2)
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke(cr)
     end
 end
 
 function point(x, y)
-    move_to(cr,x,y)
-    dx, dy = device_to_user_distance!(cr,[1., 0.])
-    rectangle(cr,x,y,dx,dx)
+    Cairo.move_to(cr,x,y)
+    dx, dy = Cairo.device_to_user_distance!(cr,[1., 0.])
+    Cairo.rectangle(cr,x,y,dx,dx)
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke(cr)
     end
 end
 
 function quad(x1, y1, x2, y2, x3, y3, x4, y4)
-    move_to(cr, x1, y1)
-    line_to(cr, x2, y2)
-    line_to(cr, x3, y3)
-    line_to(cr, x4, y4)
-    close_path(cr)
+    Cairo.move_to(cr, x1, y1)
+    Cairo.line_to(cr, x2, y2)
+    Cairo.line_to(cr, x3, y3)
+    Cairo.line_to(cr, x4, y4)
+    Cairo.close_path(cr)
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke_preserve(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke_preserve(cr)
     end
     if state.fillStuff
-        set_source(cr, state.fillCol)
-        fill(cr)
+        Cairo.set_source(cr, state.fillCol)
+        Cairo.fill(cr)
     end
 end
 
 function rect(xtopleft, ytopleft, width, height)
     if state.rectMode == CORNER
-        rectangle(cr, xtopleft, ytopleft, width, height)
+        Cairo.rectangle(cr, xtopleft, ytopleft, width, height)
     elseif state.rectMode == CORNERS # in this case, width and height are
                                      # reinterpreted as (x,y) coords of
                                      # bottom-right corner
-        rectangle(cr, xtopleft, ytopleft, width-xtopleft, height-ytopleft)
+        Cairo.rectangle(cr, xtopleft, ytopleft, width-xtopleft, height-ytopleft)
     elseif state.rectMode == CENTER
-        rectangle(cr, xtopleft-width/2, ytopleft-height/2, width, height)
+        Cairo.rectangle(cr, xtopleft-width/2, ytopleft-height/2, width, height)
     elseif state.rectMode == RADIUS
-        rectangle(cr, xtopleft-width/2, ytopleft-height/2, width/2, height/2)
+        Cairo.rectangle(cr, xtopleft-width/2, ytopleft-height/2, width/2, height/2)
     end
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke_preserve(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke_preserve(cr)
     end
     if state.fillStuff
-        set_source(cr, state.fillCol)
-        fill(cr)
+        Cairo.set_source(cr, state.fillCol)
+        Cairo.fill(cr)
     end
 end
 
 function triangle(x1,y1,x2,y2,x3,y3)
-    move_to(cr, x1, y1)
-    line_to(cr, x2, y2)
-    line_to(cr, x3, y3)
-    close_path(cr)
+    Cairo.move_to(cr, x1, y1)
+    Cairo.line_to(cr, x2, y2)
+    Cairo.line_to(cr, x3, y3)
+    Cairo.close_path(cr)
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke_preserve(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke_preserve(cr)
     end
     if state.fillStuff
-        set_source(cr, state.fillCol)
-        fill(cr)
+        Cairo.set_source(cr, state.fillCol)
+        Cairo.fill(cr)
     end
 end
 
 ## Curves
 
 function bezier(x1, y1, x2, y2, x3, y3, x4, y4)
-    move_to(cr, x1, y1);
-    curve_to(cr, x2, y2, x3, y3, x4, y4);
+    Cairo.move_to(cr, x1, y1);
+    Cairo.curve_to(cr, x2, y2, x3, y3, x4, y4);
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke_preserve(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke_preserve(cr)
     end
 end
 
@@ -429,7 +430,7 @@ function ellipseMode(eMode)
 end
 
 function noSmooth()
-    set_antialias(cr, Cairo.ANTIALIAS_NONE)
+    Cairo.set_antialias(cr, Cairo.ANTIALIAS_NONE)
 end
 
 function rectMode(rMode)
@@ -437,31 +438,31 @@ function rectMode(rMode)
 end
 
 function smooth()
-    set_antialias(cr, Cairo.ANTIALIAS_BEST)
+    Cairo.set_antialias(cr, Cairo.ANTIALIAS_BEST)
 end
 
 function strokeCap(capType)
     if capType == ROUND
-        set_line_cap(cr, Cairo.CAIRO_LINE_CAP_ROUND)
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_CAP_ROUND)
     elseif capType == SQUARE
-        set_line_cap(cr, Cairo.CAIRO_LINE_CAP_BUTT)
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_CAP_BUTT)
     elseif capType == PROJECT
-        set_line_cap(cr, Cairo.CAIRO_LINE_CAP_SQUARE)
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_CAP_SQUARE)
     end
 end
 
 function strokeJoin(joinType)
     if joinType == MITER
-        set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_MITER)
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_MITER)
     elseif joinType == BEVEL
-        set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_BEVEL)
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_BEVEL)
     elseif joinType == ROUND
-        set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_ROUND)
+        Cairo.set_line_cap(cr, Cairo.CAIRO_LINE_JOIN_ROUND)
     end
 end
 
 function strokeWeight(newWeight)
-    set_line_width(cr, newWeight)
+    Cairo.set_line_width(cr, newWeight)
 end
 
 ## Vertex
@@ -551,19 +552,19 @@ end
 #applyMatrix()
 
 function popMatrix()
-    restore(cr)
+    Cairo.restore(cr)
 end
 
 function printMatrix()
-    println(get_matrix(cr))
+    println(Cairo.get_matrix(cr))
 end
 
 function pushMatrix()
-    save(cr)
+    Cairo.save(cr)
 end
 
 function resetMatrix()
-    identity_matrix(cr)
+    Cairo.identity_matrix(cr)
 end
 
 function rotate(ang)
@@ -587,8 +588,8 @@ end
 
 function background(r, g, b, a)
     state.bgCol = RGB(r, g, b)
-    set_source(cr, state.bgCol)
-    paint(cr)
+    Cairo.set_source(cr, state.bgCol)
+    Cairo.paint(cr)
 end
 
 function colorMode(mode::String)
@@ -679,7 +680,7 @@ end
 #imageMode
 
 function loadImage(fileName::String)
-    return read_from_png(fileName)
+    return Cairo.read_from_png(fileName)
 end
 
 function noTint()
@@ -721,27 +722,27 @@ end
 ## Loading & Displaying
 
 function createFont(fontName::String, fontSize::Float32)
-    set_font_face(cr, fontName)
-    set_font_size(cr, fontSize)
+    Cairo.set_font_face(cr, fontName)
+    Cairo.set_font_size(cr, fontSize)
 end
 
 #loadFont
 
 function text(str::String, x, y)
-    move_to(cr, x, y);
-    text_path(cr, str);
+    Cairo.move_to(cr, x, y);
+    Cairo.text_path(cr, str);
     if state.fillStuff
-        set_source(cr, state.fillCol)
-        fill_preserve(cr)
+        Cairo.set_source(cr, state.fillCol)
+        Cairo.fill_preserve(cr)
     end
     if state.strokeStuff
-        set_source(cr, state.strokeCol)
-        stroke(cr)
+        Cairo.set_source(cr, state.strokeCol)
+        Cairo.stroke(cr)
     end
 end
 
 function textFont(fontName::String)
-    set_font_face(cr, fontName)
+    Cairo.set_font_face(cr, fontName)
 end
 
 ## Attributes
@@ -754,18 +755,18 @@ end
 #textMode
 
 function textSize(fontSize)
-    set_font_size(cr, fontSize)
+    Cairo.set_font_size(cr, fontSize)
 end
 
 function textWidth(str::String)
-    extents = text_extents(cr, str)
+    extents = Cairo.text_extents(cr, str)
     return extents[3]
 end
 
 ## Metrics
 
 #function textAscent(str::String)
-#    extents = scaled_font_extents(cr, str)
+#    extents = Cairo.scaled_font_extents(cr, str)
 #    return extents[1]
 #end
 

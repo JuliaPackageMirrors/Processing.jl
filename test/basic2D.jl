@@ -14,7 +14,7 @@ coordSystem(-1, 1, 1, -1) # user-defined coordinate system (x-axis min = -1,
 smooth()
 
 ellipse(0,0,0.3,0.5)
-ellipse(0,0,0.2,0.2)
+ellipse(-.5,.5,0.2,0.2)
 triangle(.3, .75, .58, .20, .86, .75)
 triangle(.3, .6, .58, .40, .86, .7)
 point(0, 0)
@@ -26,7 +26,7 @@ line(.5, -.4, .7, -.5)
 line(.7, -.4, .5, -.5)
 strokeWeight(1)
 stroke(0.9, 0, 0, 1)
-arc(-.6, .6, .3, 0.4pi, pi)
+arc(-.6, .6, .3, .3, 0.4pi, pi, CHORD)
 animate()
 
 x = 0
@@ -36,4 +36,7 @@ while true
 	point(0, 0)
 	animate()
 	x = x + 0.01
+	if mousePressed()
+		println("mouse pressed")
+	end
 end
