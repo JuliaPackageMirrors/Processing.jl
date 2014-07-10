@@ -211,9 +211,13 @@ export state
 
 # special Processing.jl animate() command for smoother animations
 function animate()
-    Tk.reveal(c)
-    Tk.update()
-    Cairo.new_path(cr)
+    if Tk.tcl("winfo", "exists", win) == "1"
+        Tk.reveal(c)
+        Tk.update()
+        Cairo.new_path(cr)
+    else
+        println("Processing: Window is no longer open. Please use Ctrl-C to stop the animation loop, if there is one.")
+    end
 end
 
 # allow user to control coordinate system
