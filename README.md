@@ -1,7 +1,7 @@
 Processing.jl
 =============
 
-A port of the Processing language to Julia.
+A port of the Processing language (https://www.processing.org) to Julia.
 
 It mainly uses ModernGL.jl and GLFW.jl behind the scenes. Please note that this package assumes that you have a graphics card/driver which supports OpenGL 3.2 or greater. If your computer is about 4-5 years old, then that is most likely the case. A convience function will soon be added to easily report what versions of OpenGL your card supports.
 
@@ -48,3 +48,7 @@ Pkg.clone("https://github.com/rennis250/Processing.jl.git")
 # Caveats
 
 For some features, such as alpha blending or point smoothing, we ask OpenGL to simply perform this operation. This means that it will depend on the algorithms that your graphics card supplier/driver has implemented. I have already noticed visible differences between rendering on Windows and Mac. These differences should soon be amended with our own shader-based implementations of these functions.
+
+# Credit
+
+Processing is an open graphics programming language developed by Ben Fry & Casey Reas. This port was developed by Robert Ennis with the help of @SimonDanisch and @o-jasper. It is mainly maintained by Robert Ennis.
