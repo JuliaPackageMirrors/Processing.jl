@@ -131,22 +131,33 @@ texColorBuffer = GLuint[0]
 # this contains the coordinates for the framebuffer texture that we draw at
 # the end of each render loop.
 # yes, this is illegible.
-quadVertices = GLfloat[-1.0, 1.0, 0.0, 1.0,
-                        1.0, 1.0, 1.0, 1.0,
-                        1.0, -1.0, 1.0, 0.0,
-                        1.0, -1.0, 1.0, 0.0,
-                        -1.0, -1.0, 0.0, 0.0,
-                        -1.0, 1.0, 0.0, 1.0]
+quadPosCoords = GLfloat[-1.0, 1.0,
+                        1.0, 1.0,
+                        1.0, -1.0,
+                        1.0, -1.0,
+                        -1.0, -1.0,
+                        -1.0, 1.0]
+quadTexCoords = GLfloat[0.0, 1.0,
+                        1.0, 1.0,
+                        1.0, 0.0,
+                        1.0, 0.0,
+                        0.0, 0.0,
+                        0.0, 1.0]
 
 type GLobjs
     vaos::Array{GLuint, 1}
-    vbos::Array{GLuint, 1}
+    posvbos::Array{GLuint, 1}
+    posind::Int
+    colvbos::Array{GLuint, 1}
+    colind::Int
+    texvbos::Array{GLuint, 1}
+    texind::Int
     ebos::Array{GLuint, 1}
     fbos::Array{GLuint, 1}
     rbos::Array{GLuint, 1}
 end
 
-globjs = GLobjs(GLuint[], GLuint[], GLuint[], GLuint[], GLuint[])
+globjs = GLobjs(GLuint[], GLuint[], 0, GLuint[], 0, GLuint[], 0, GLuint[], GLuint[], GLuint[])
 
 export screen, animate, endDrawing, drawingWindow
 
@@ -227,10 +238,12 @@ function screen(width, height; fullScreen=false)
     # sure that vertices always wind in the correct direction.
     # currently, this is only enabled during text writing.
     # glEnable(GL_CULL_FACE)
+    # glCullFace(GL_BACK)
+    # glFrontFace(GL_CW)
 
     glEnable(GL_BLEND) # using blending by default
-
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)
+
     glEnable(GL_MULTISAMPLE) # just be double sure that multisampling is on
 
     glEnable(GL_TEXTURE_2D)

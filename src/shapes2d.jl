@@ -33,41 +33,60 @@ function arc(xc, yc, w, h, start, stop)
 		@inbounds cs[2,x,:] = sin(linspace(start[x], stop[x], numSlices-1))
 	end
 
-	vertexData = zeros(GLfloat, numSlices*9*length(xc))
-	vertexStride = numSlices*9
+	posStride = numSlices*3
+	posData = zeros(GLfloat, numSlices*3*length(xc))
 	for x = 1:length(xc)
 		@inbounds cw = [xc[x]; vec(cs[1,x,:]) .* w[x] .+ xc[x]]
 		@inbounds ch = [yc[x]; vec(cs[2,x,:]) .* h[x] .+ yc[x]]
-		@inbounds vertexData[(x-1)*vertexStride+1:9:x*vertexStride] = cw
-		@inbounds vertexData[(x-1)*vertexStride+2:9:x*vertexStride] = ch
-		@inbounds vertexData[(x-1)*vertexStride+3:9:x*vertexStride] = eps(Float32)*x
+		@inbounds posData[(x-1)*posStride+1:3:x*posStride] = cw
+		@inbounds posData[(x-1)*posStride+2:3:x*posStride] = ch
+		@inbounds posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
 	end
 
-	if state.drawTexture
-		# texcoords
-		@inbounds vertexData[8:vertexStride:end] = 0
-		@inbounds vertexData[9:vertexStride:end] = 0
+	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
+	glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
 
-		@inbounds vertexData[17:vertexStride:end] = 1
-		@inbounds vertexData[18:vertexStride:end] = 0
+	# textures aren't properly implemented for arcs yet.
+	# if state.drawTexture
+	#	# texcoords
+	#	texData = zeros(GLfloat, numSlices*4*length(xc))
+	#	@inbounds texData[8:texStride:end] = 0
+	#	@inbounds texData[9:texStride:end] = 0
 
-		@inbounds vertexData[26:vertexStride:end] = 1
-		@inbounds vertexData[27:vertexStride:end] = 1
+	#	@inbounds texData[17:texStride:end] = 1
+	#	@inbounds texData[18:texStride:end] = 0
+
+	#	@inbounds texData[26:texStride:end] = 1
+	#	@inbounds texData[27:texStride:end] = 1
+
+	# glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
+    # glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
+	# end
+
+	colData = []
+	if state.fillStuff || state.strokeStuff
+		colData = zeros(GLfloat, numSlices*4*length(xc))
 	end
 
-	dataStride = numSlices
+	shapeStride = numSlices
 	if state.fillStuff
-		loadColors!(vertexData, state.fillCol, 9, numSlices*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		loadColors!(colData, state.fillCol, numSlices*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
+		# textures aren't properly implemented for arcs yet.
+		# does it even make senes to do so? it could produce funky
+		# results that might be useful.
+		# glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
 		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_TRIANGLE_FAN, (x-1)*dataStride, dataStride)
+			@inbounds glDrawArrays(GL_TRIANGLE_FAN, (x-1)*shapeStride, shapeStride)
 		end
 	end
 	if state.strokeStuff
-		loadColors!(vertexData, state.strokeCol, 9, numSlices*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		loadColors!(colData, state.strokeCol, numSlices*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_LINE_STRIP, (x-1)*dataStride+1, dataStride-1)
+			@inbounds glDrawArrays(GL_TRIANGLE_FAN, (x-1)*shapeStride, shapeStride)
 		end
 	end
 end
@@ -100,41 +119,55 @@ function ellipse(xc, yc, w, h)
 	c = cos(linspace(0, 2pi, numSlices-1))
 	s = sin(linspace(0, 2pi, numSlices-1))
 
-	vertexData = zeros(GLfloat, numSlices*9*length(xc))
-	vertexStride = numSlices*9
+	posStride = numSlices*3
+	posData = zeros(GLfloat, numSlices*3*length(xc))
 	for x = 1:length(xc)
 		@inbounds cw = [xc[x]; c .* w[x] .+ xc[x]]
 		@inbounds ch = [yc[x]; s .* h[x] .+ yc[x]]
-		@inbounds vertexData[(x-1)*vertexStride+1:9:x*vertexStride] = cw
-		@inbounds vertexData[(x-1)*vertexStride+2:9:x*vertexStride] = ch
-		@inbounds vertexData[(x-1)*vertexStride+3:9:x*vertexStride] = eps(Float32)*x
+		@inbounds posData[(x-1)*posStride+1:3:x*posStride] = cw
+		@inbounds posData[(x-1)*posStride+2:3:x*posStride] = ch
+		@inbounds posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
 	end
 
-	if state.drawTexture
-		# texcoords
-		@inbounds vertexData[8:vertexStride:end] = 0
-		@inbounds vertexData[9:vertexStride:end] = 0
+	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
+	glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
 
-		@inbounds vertexData[17:vertexStride:end] = 1
-		@inbounds vertexData[18:vertexStride:end] = 0
+	# if state.drawTexture
+	#	# texcoords
+	#	texData = zeros(GLfloat, numSlices*4*length(xc))
+	#	@inbounds texData[8:vertexStride:end] = 0
+	#	@inbounds texData[9:vertexStride:end] = 0
 
-		@inbounds vertexData[26:vertexStride:end] = 1
-		@inbounds vertexData[27:vertexStride:end] = 1
+	#	@inbounds texData[17:vertexStride:end] = 1
+	#	@inbounds texData[18:vertexStride:end] = 0
+
+	#	@inbounds texData[26:vertexStride:end] = 1
+	#	@inbounds texData[27:vertexStride:end] = 1
+
+	# glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
+	# glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
+	# end
+
+	colData = []
+	if state.fillStuff || state.strokeStuff
+		colData = zeros(GLfloat, numSlices*4*length(xc))
 	end
 
-	dataStride = numSlices
+	shapeStride = numSlices
 	if state.fillStuff
-		loadColors!(vertexData, state.fillCol, 9, numSlices*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		loadColors!(colData, state.fillCol, numSlices*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_TRIANGLE_FAN, (x-1)*dataStride, dataStride)
+			@inbounds glDrawArrays(GL_TRIANGLE_FAN, (x-1)*shapeStride, shapeStride)
 		end
 	end
 	if state.strokeStuff
-		loadColors!(vertexData, state.strokeCol, 9, numSlices*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		loadColors!(colData, state.strokeCol, numSlices*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*dataStride+1, dataStride-1)
+			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride+1, shapeStride-1)
 		end
 	end
 end
@@ -149,41 +182,46 @@ end
 
 function line(x1, y1, x2, y2)
 	if state.strokeStuff
-		vertexStride = 9*2
-		vertexData = zeros(GLfloat, 9*2*length(x1))
-		@inbounds vertexData[1:vertexStride:end] = x1
-		@inbounds vertexData[2:vertexStride:end] = y1
-		@inbounds vertexData[3:vertexStride:end] = eps(Float32)*(1:length(x1))
+		posData = zeros(GLfloat, 2*3*length(x1))
+		@inbounds posData[1:6:end] = x1
+		@inbounds posData[2:6:end] = y1
+		@inbounds posData[3:6:end] = eps(Float32)*(1:length(x1))
 
-		@inbounds vertexData[10:vertexStride:end] = x2
-		@inbounds vertexData[11:vertexStride:end] = y2
-		@inbounds vertexData[12:vertexStride:end] = eps(Float32)*(1:length(x1))
+		@inbounds posData[4:6:end] = x2
+		@inbounds posData[5:6:end] = y2
+		@inbounds posData[6:6:end] = eps(Float32)*(1:length(x1))
 
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
+
+		shapeStride = 2*4
+		colData = zeros(GLfloat, 2*4*length(x1))
 		if size(state.strokeCol, 1) == 1
-			@inbounds vertexData[4:vertexStride:end] = state.strokeCol[1].r
-			@inbounds vertexData[5:vertexStride:end] = state.strokeCol[1].g
-			@inbounds vertexData[6:vertexStride:end] = state.strokeCol[1].b
-			@inbounds vertexData[7:vertexStride:end] = 1.0
+			@inbounds colData[1:8:end] = state.strokeCol[1].r
+			@inbounds colData[2:8:end] = state.strokeCol[1].g
+			@inbounds colData[3:8:end] = state.strokeCol[1].b
+			@inbounds colData[4:8:end] = 1.0
 
-			@inbounds vertexData[13:vertexStride:end] = state.strokeCol[1].r
-			@inbounds vertexData[14:vertexStride:end] = state.strokeCol[1].g
-			@inbounds vertexData[15:vertexStride:end] = state.strokeCol[1].b
-			@inbounds vertexData[16:vertexStride:end] = 1.0
+			@inbounds colData[5:8:end] = state.strokeCol[1].r
+			@inbounds colData[6:8:end] = state.strokeCol[1].g
+			@inbounds colData[7:8:end] = state.strokeCol[1].b
+			@inbounds colData[8:8:end] = 1.0
 		else
 			for c = 1:size(state.strokeCol, 1)
-				@inbounds vertexData[(c-1)*vertexStride+4:vertexStride:c*vertexStride] = state.strokeCol[c].r
-				@inbounds vertexData[(c-1)*vertexStride+5:vertexStride:c*vertexStride] = state.strokeCol[c].g
-				@inbounds vertexData[(c-1)*vertexStride+6:vertexStride:c*vertexStride] = state.strokeCol[c].b
-				@inbounds vertexData[(c-1)*vertexStride+7:vertexStride:c*vertexStride] = 1.0
+				@inbounds colData[(c-1)*shapeStride+1:shapeStride:c*shapeStride] = state.strokeCol[c].r
+				@inbounds colData[(c-1)*shapeStride+2:shapeStride:c*shapeStride] = state.strokeCol[c].g
+				@inbounds colData[(c-1)*shapeStride+3:shapeStride:c*shapeStride] = state.strokeCol[c].b
+				@inbounds colData[(c-1)*shapeStride+4:shapeStride:c*shapeStride] = 1.0
 
-				@inbounds vertexData[(c-1)*vertexStride+13:vertexStride:c*vertexStride] = state.strokeCol[c].r
-				@inbounds vertexData[(c-1)*vertexStride+14:vertexStride:c*vertexStride] = state.strokeCol[c].g
-				@inbounds vertexData[(c-1)*vertexStride+15:vertexStride:c*vertexStride] = state.strokeCol[c].b
-				@inbounds vertexData[(c-1)*vertexStride+16:vertexStride:c*vertexStride] = 1.0
+				@inbounds colData[(c-1)*shapeStride+5:shapeStride:c*shapeStride] = state.strokeCol[c].r
+				@inbounds colData[(c-1)*shapeStride+6:shapeStride:c*shapeStride] = state.strokeCol[c].g
+				@inbounds colData[(c-1)*shapeStride+7:shapeStride:c*shapeStride] = state.strokeCol[c].b
+				@inbounds colData[(c-1)*shapeStride+8:shapeStride:c*shapeStride] = 1.0
 			end
 		end
 
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		glDrawArrays(GL_LINES, 0, 2*length(x1))
 	end
 end
@@ -194,15 +232,19 @@ end
 
 function point(x, y)
 	if state.strokeStuff
-		vertexStride = 9
-		vertexData = zeros(GLfloat, 9*length(x))
-		@inbounds vertexData[1:vertexStride:end] = x
-		@inbounds vertexData[2:vertexStride:end] = y
-		@inbounds vertexData[3:vertexStride:end] = eps(Float32)*(1:length(x))
+		posData = zeros(GLfloat, 3*length(x))
+		@inbounds posData[1:3:end] = x
+		@inbounds posData[2:3:end] = y
+		@inbounds posData[3:3:end] = eps(Float32)*(1:length(x))
 
-		loadColors!(vertexData, state.strokeCol, vertexStride, 1)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
 
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		colData = zeros(GLfloat, 4*length(x))
+		loadColors!(colData, state.strokeCol, 1)
+
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		glDrawArrays(GL_POINTS, 0, length(x))
 	end
 end
@@ -212,35 +254,42 @@ function point(x, y, tex)
 end
 
 function quad(x1, y1, x2, y2, x3, y3, x4, y4)
-	vertexStride = 9*4
-	vertexData = zeros(GLfloat, 9*4*length(x1))
+	posStride = 4*3
+	posData = zeros(GLfloat, 4*3*length(x1))
 	# vertices
-	@inbounds vertexData[1:vertexStride:end] = x1
-	@inbounds vertexData[2:vertexStride:end] = y1
-	@inbounds vertexData[3:vertexStride:end] = eps(Float32)*(1:length(x1))
+	@inbounds posData[1:posStride:end] = x1
+	@inbounds posData[2:posStride:end] = y1
+	@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(x1))
 
-	@inbounds vertexData[10:vertexStride:end] = x2
-	@inbounds vertexData[11:vertexStride:end] = y2
-	@inbounds vertexData[12:vertexStride:end] = eps(Float32)*(1:length(x1))
+	@inbounds posData[4:posStride:end] = x2
+	@inbounds posData[5:posStride:end] = y2
+	@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(x1))
 
-	@inbounds vertexData[19:vertexStride:end] = x3
-	@inbounds vertexData[20:vertexStride:end] = y3
-	@inbounds vertexData[21:vertexStride:end] = eps(Float32)*(1:length(x1))
+	@inbounds posData[7:posStride:end] = x3
+	@inbounds posData[8:posStride:end] = y3
+	@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(x1))
 
-	@inbounds vertexData[28:vertexStride:end] = x4
-	@inbounds vertexData[29:vertexStride:end] = y4
-	@inbounds vertexData[30:vertexStride:end] = eps(Float32)*(1:length(x1))
+	@inbounds posData[10:posStride:end] = x4
+	@inbounds posData[11:posStride:end] = y4
+	@inbounds posData[12:posStride:end] = eps(Float32)*(1:length(x1))
+
+	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
+	glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
 
 	if state.drawTexture
 		# texcoords
-		@inbounds vertexData[8:vertexStride:end] = 0
-		@inbounds vertexData[9:vertexStride:end] = 0
+		# texData = zeros(GLfloat, numSlices*4*length(xc))
+		# @inbounds texData[8:vertexStride:end] = 0
+		# @inbounds texData[9:vertexStride:end] = 0
 
-		@inbounds vertexData[17:vertexStride:end] = 1
-		@inbounds vertexData[18:vertexStride:end] = 0
+		# @inbounds texData[17:vertexStride:end] = 1
+		# @inbounds texData[18:vertexStride:end] = 0
 
-		@inbounds vertexData[26:vertexStride:end] = 1
-		@inbounds vertexData[27:vertexStride:end] = 1
+		# @inbounds texData[26:vertexStride:end] = 1
+		# @inbounds texData[27:vertexStride:end] = 1
+
+		# glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
+		# glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
 	end
 
 	elements = zeros(GLuint, 6*length(x1))
@@ -263,18 +312,25 @@ function quad(x1, y1, x2, y2, x3, y3, x4, y4)
 		index += 6
 	end
 
+	colData = []
+	if state.fillStuff || state.strokeStuff
+		colData = zeros(GLfloat, 4*4*length(x1))
+	end
+
 	if state.fillStuff
-		loadColors!(vertexData, state.fillCol, 9, 4*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		loadColors!(colData, state.fillCol, 4*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW)
 		glDrawElements(GL_TRIANGLES, 6*length(x1), GL_UNSIGNED_INT, C_NULL)
 	end
 	if state.strokeStuff
-		loadColors!(vertexData, state.fillCol, 9, 4*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
-		dataStride = 4
+		loadColors!(colData, state.strokeCol, 4*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
+		shapeStride = 4
 		for x = 1:length(x1)
-			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*dataStride, dataStride)
+			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
 		end
 	end
 end
@@ -310,41 +366,49 @@ function rect(xtopleft, ytopleft, width, height)
 	@inbounds x4 = xtopleft
 	@inbounds y4 = ytopleft .- height
 
-	vertexStride = 4*9
-	vertexData = zeros(GLfloat, 9*4*length(xtopleft))
+	posStride = 4*3
+	posData = zeros(GLfloat, 4*3*length(xtopleft))
 	# vertices
-	@inbounds vertexData[1:vertexStride:end] = x1
-	@inbounds vertexData[2:vertexStride:end] = y1
-	@inbounds vertexData[3:vertexStride:end] = eps(Float32)*(1:length(xtopleft))
+	@inbounds posData[1:posStride:end] = x1
+	@inbounds posData[2:posStride:end] = y1
+	@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(xtopleft))
 
-	@inbounds vertexData[10:vertexStride:end] = x2
-	@inbounds vertexData[11:vertexStride:end] = y2
-	@inbounds vertexData[12:vertexStride:end] = eps(Float32)*(1:length(xtopleft))
+	@inbounds posData[4:posStride:end] = x2
+	@inbounds posData[5:posStride:end] = y2
+	@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(xtopleft))
 
-	@inbounds vertexData[19:vertexStride:end] = x3
-	@inbounds vertexData[20:vertexStride:end] = y3
-	@inbounds vertexData[21:vertexStride:end] = eps(Float32)*(1:length(xtopleft))
+	@inbounds posData[7:posStride:end] = x3
+	@inbounds posData[8:posStride:end] = y3
+	@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(xtopleft))
 
-	@inbounds vertexData[28:vertexStride:end] = x4
-	@inbounds vertexData[29:vertexStride:end] = y4
-	@inbounds vertexData[30:vertexStride:end] = eps(Float32)*(1:length(xtopleft))
+	@inbounds posData[10:posStride:end] = x4
+	@inbounds posData[11:posStride:end] = y4
+	@inbounds posData[12:posStride:end] = eps(Float32)*(1:length(xtopleft))
+
+	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
+	glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
 
 	if state.drawTexture
 		# texcoords
-		@inbounds vertexData[8:vertexStride:end] = 0
-		@inbounds vertexData[9:vertexStride:end] = 0
+		texStride = 4*2
+		texData = zeros(GLfloat, 4*2*length(xtopleft))
+		@inbounds texData[1:texStride:end] = 0
+		@inbounds texData[2:texStride:end] = 0
 
-		@inbounds vertexData[17:vertexStride:end] = 1
-		@inbounds vertexData[18:vertexStride:end] = 0
+		@inbounds texData[3:texStride:end] = 1
+		@inbounds texData[4:texStride:end] = 0
 
-		@inbounds vertexData[26:vertexStride:end] = 1
-		@inbounds vertexData[27:vertexStride:end] = 1
+		@inbounds texData[5:texStride:end] = 1
+		@inbounds texData[6:texStride:end] = 1
 
-		@inbounds vertexData[35:vertexStride:end] = 0
-		@inbounds vertexData[36:vertexStride:end] = 1
+		@inbounds texData[7:texStride:end] = 0
+		@inbounds texData[8:texStride:end] = 1
+
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
 	end
 
-	elements = zeros(GLuint, 6*length(x1))
+	elements = zeros(GLuint, 6*length(xtopleft))
 
 	@inbounds elements[1] = 0
 	@inbounds elements[2] = 1
@@ -364,18 +428,25 @@ function rect(xtopleft, ytopleft, width, height)
 		index += 6
 	end
 
+	colData = []
+	if state.fillStuff || state.strokeStuff
+		colData = zeros(GLfloat, 4*4*length(xtopleft))
+	end
+
 	if state.fillStuff
-		loadColors!(vertexData, state.fillCol, 9, 4*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		loadColors!(colData, state.fillCol, 4*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW)
 		glDrawElements(GL_TRIANGLES, 6*length(xtopleft), GL_UNSIGNED_INT, C_NULL)
 	end
 	if state.strokeStuff
-		loadColors!(vertexData, state.strokeCol, 9, 4*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
-		dataStride = 4
+		loadColors!(colData, state.strokeCol, 4*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
+		shapeStride = 4
 		for x = 1:length(x1)
-			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*dataStride, dataStride)
+			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
 		end
 	end
 end
@@ -389,45 +460,59 @@ function rect(xtopleft, ytopleft, width, height, tex)
 end
 
 function triangle(x1, y1, x2, y2, x3, y3)
-	vertexStride = 9*3
-	vertexData = zeros(GLfloat, 9*3*length(x1))
-	@inbounds vertexData[1:vertexStride:end] = x1
-	@inbounds vertexData[2:vertexStride:end] = y1
-	@inbounds vertexData[3:vertexStride:end] = eps(Float32)*(1:length(x1))
+	posStride = 3*3
+	posData = zeros(GLfloat, 3*3*length(x1))
+	@inbounds posData[1:posStride:end] = x1
+	@inbounds posData[2:posStride:end] = y1
+	@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(x1))
 
-	@inbounds vertexData[10:vertexStride:end] = x2
-	@inbounds vertexData[11:vertexStride:end] = y2
-	@inbounds vertexData[12:vertexStride:end] = eps(Float32)*(1:length(x1))
+	@inbounds posData[4:posStride:end] = x2
+	@inbounds posData[5:posStride:end] = y2
+	@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(x1))
 
-	@inbounds vertexData[19:vertexStride:end] = x3
-	@inbounds vertexData[20:vertexStride:end] = y3
-	@inbounds vertexData[21:vertexStride:end] = eps(Float32)*(1:length(x1))
+	@inbounds posData[7:posStride:end] = x3
+	@inbounds posData[8:posStride:end] = y3
+	@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(x1))
+
+	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
+	glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
 
 	if state.drawTexture
 		# texcoords
-		@inbounds vertexData[8:vertexStride:end] = 0
-		@inbounds vertexData[9:vertexStride:end] = 0
+		# texData = zeros(GLfloat, numSlices*4*length(xc))
+		# @inbounds texData[8:vertexStride:end] = 0
+		# @inbounds texData[9:vertexStride:end] = 0
 
-		@inbounds vertexData[17:vertexStride:end] = 1
-		@inbounds vertexData[18:vertexStride:end] = 0
+		# @inbounds texData[17:vertexStride:end] = 1
+		# @inbounds texData[18:vertexStride:end] = 0
 
-		@inbounds vertexData[26:vertexStride:end] = 1
-		@inbounds vertexData[27:vertexStride:end] = 1
+		# @inbounds texData[26:vertexStride:end] = 1
+		# @inbounds texData[27:vertexStride:end] = 1
+		#
+		# glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
+    # glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
 	end
 
-	dataStride = 3
+	colData = []
+	if state.fillStuff || state.strokeStuff
+		colData = zeros(GLfloat, 4*3*length(x1))
+	end
+
+	shapeStride = 3
 	if state.fillStuff
-		loadColors!(vertexData, state.fillCol, 9, 3*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		loadColors!(colData, state.fillCol, 3*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		for x = 1:length(x1)
-			@inbounds glDrawArrays(GL_TRIANGLES, (x-1)*dataStride, dataStride)
+			@inbounds glDrawArrays(GL_TRIANGLES, (x-1)*shapeStride, shapeStride)
 		end
 	end
 	if state.strokeStuff
-		loadColors!(vertexData, state.strokeCol, 9, 3*9)
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
+		loadColors!(colData, state.strokeCol, 3*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		for x = 1:length(x1)
-			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*dataStride, dataStride)
+			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
 		end
 	end
 end
@@ -537,17 +622,18 @@ function vertices(vs, ts)
 
 	if state.drawTexture
 		# texcoords
-		@inbounds vertexData[8:shapeData.vertexStride:end] = 0
-		@inbounds vertexData[9:shapeData.vertexStride:end] = 0
+		# texData = zeros(GLfloat, numSlices*4*length(xc))
+		# @inbounds texData[8:shapeData.vertexStride:end] = 0
+		# @inbounds texData[9:shapeData.vertexStride:end] = 0
 
-		@inbounds vertexData[17:shapeData.vertexStride:end] = 1
-		@inbounds vertexData[18:shapeData.vertexStride:end] = 0
+		# @inbounds texData[17:shapeData.vertexStride:end] = 1
+		# @inbounds texData[18:shapeData.vertexStride:end] = 0
 
-		@inbounds vertexData[26:shapeData.vertexStride:end] = 1
-		@inbounds vertexData[27:shapeData.vertexStride:end] = 1
+		# @inbounds texData[26:shapeData.vertexStride:end] = 1
+		# @inbounds texData[27:shapeData.vertexStride:end] = 1
 
-		@inbounds vertexData[34:shapeData.vertexStride:end] = 0
-		@inbounds vertexData[35:shapeData.vertexStride:end] = 1
+		# @inbounds texData[34:shapeData.vertexStride:end] = 0
+		# @inbounds texData[35:shapeData.vertexStride:end] = 1
 	end
 end
 
