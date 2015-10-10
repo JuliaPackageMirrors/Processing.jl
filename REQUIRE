@@ -1,7 +1,13 @@
-Color
+julia 0.4-
+ModernGL
+GLFW
+Images
 Tk
 Gtk
 Cairo
 Tau
-GLFW
-julia 0.2-
+Colors
+FreeType
+GLAbstraction
+GeometryTypes
+Packing

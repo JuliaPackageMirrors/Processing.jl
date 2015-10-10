@@ -1,9 +1,6 @@
-module ProcessingStd
+module Processing2D
 
-using Tk
-using Cairo
-using Color
-using Tau
+using Tk, Cairo, Color, Tau
 
 import Cairo: rotate, translate, scale, arc
 
@@ -25,6 +22,7 @@ export ellipseMode, rectMode
 # export shape, shapeMode
 export mouseButton, mouseClicked, mouseDragged, mouseMoved, mousePressed
 export mouseReleased, mouseWheel, mouseX, mouseY, pmouseX, pmouseY
+export save
 export background, fill, noFill, colorMode, noStroke, stroke
 # export applyMatrix
 export popMatrix, printMatrix, pushMatrix, resetMatrix, rotate
@@ -549,6 +547,13 @@ end
 
 function pmouseY()
     return state.pmY
+end
+
+function save(fname::String)
+    Cairo.write_to_png(s, fname)
+    # surface = Cairo.CairoPDFSurface(filename, width, height)
+    # CairoRenderer(surface)
+    # finish(surface)
 end
 
 ## Transform
