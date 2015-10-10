@@ -1,4 +1,4 @@
-include(Pkg.dir()*"Processing/src/Processing2D.jl")
+include(Pkg.dir()*"/Processing/src/Processing2D.jl")
 
 Processing2D.coordSystem(-1, 1, 1, -1) # user-defined coordinate system (x-axis min = -1,
 						  # x-axis max = 1, y-axis min = -1, y-axis max = 1,

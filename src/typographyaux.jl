@@ -66,9 +66,6 @@ function setupFontCharacters()
 		# texture. the font shader then takes care of turning this into a
 		# textual element.
 
-		# im still debating whether we want SDF text in a psychophysics
-		# setting...
-
 		# this pads the image so that we can later downsample it properly
 		# restrict_steps = 2
 		# halfpad = 2*(2^restrict_steps)

@@ -3,7 +3,7 @@ Processing.jl
 
 A port of the Processing language to Julia.
 
-It mainly uses ModernGL.jl and GLFW.jl behind the scenes. Please note that this package assumes that you have a graphics card which supports OpenGL 3.2 or greater. If your computer is about 4-5 years old, then that is most likely the case. A convience function will soon be added to easily report what versions of OpenGL your card supports.
+It mainly uses ModernGL.jl and GLFW.jl behind the scenes. Please note that this package assumes that you have a graphics card which supports OpenGL 3.2 or greater. If your computer is about 4-5 years old, then that is most likely the case. A convience function will soon be added to easily report what versions of OpenGL your card supports. In the worst case scenario, you can fall back onto a 2D-only Cairo/TK supported backend by importing the Processing2D.jl file, rather than entering "using Processing". See the "basic2D.jl" example in the "test/" directory for demo of how to go about this easily.
 
 At the moment, this package is based on "hand-written" code, in order to see how much speed can be attained in a raw OpenGL setting. That code is slowly being transferred to the GLAbstraction.jl, GLWindow.jl, and GLVisualize.jl packages and those packages will eventually become the main support for Processing.jl. This development will take place in a separate branch. The master branch will remain the recommended version for the time being, since it is tested and mostly stable. Any bug fixes will be ported to both branches.
 

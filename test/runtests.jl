@@ -37,7 +37,7 @@ ft = zeros(600)
 x = 1
 t = 0
 
-image = Processing.loadImage("image.png")
+image = Processing.loadImage(Pkg.dir()*"/Processing/test/image.png")
 tex = Processing.texture(image)
 
 @time while x < 600
