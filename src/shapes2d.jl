@@ -10,7 +10,7 @@ include("shapesaux.jl")
 
 ## 2D Primitives
 
-function arc(xc, yc, w, h, start, stop)
+function arc(xc, yc, zc, w, h, start, stop)
 	if state.ellipseMode == "CENTER"
 		w = w ./ 2
 		h = h ./ 2
@@ -40,7 +40,11 @@ function arc(xc, yc, w, h, start, stop)
 		@inbounds ch = [yc[x]; vec(cs[2,x,:]) .* h[x] .+ yc[x]]
 		@inbounds posData[(x-1)*posStride+1:3:x*posStride] = cw
 		@inbounds posData[(x-1)*posStride+2:3:x*posStride] = ch
-		@inbounds posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
+		if zc == 0
+			@inbounds posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
+		else
+			@inbounds posData[(x-1)*posStride+3:3:x*posStride] = zc
+		end
 	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
@@ -86,20 +90,23 @@ function arc(xc, yc, w, h, start, stop)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_TRIANGLE_FAN, (x-1)*shapeStride, shapeStride)
+			@inbounds glDrawArrays(GL_LINES, (x-1)*shapeStride+1, shapeStride-1)
 		end
 	end
 end
 
-function arc(xc, yc, w, h, start, stop, tex)
+function arc(xc, yc, zc, w, h, start, stop, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
 	switchShader("texturedShapes")
-	arc(xc, yc, w, h, start, stop)
+	arc(xc, yc, zc, w, h, start, stop)
 	switchShader("basicShapes")
 end
 
-function ellipse(xc, yc, w, h)
+arc(xc, yc, w, h, start, stop, tex::GLuint) = arc(xc, yc, 0, w, h, start, stop, tex::GLuint)
+arc(xc, yc, w, h, start, stop) = arc(xc, yc, 0, w, h, start, stop)
+
+function ellipse(xc, yc, zc, w, h)
 	if state.ellipseMode == "CENTER"
 		w = w ./ 2
 		h = h ./ 2
@@ -126,7 +133,11 @@ function ellipse(xc, yc, w, h)
 		@inbounds ch = [yc[x]; s .* h[x] .+ yc[x]]
 		@inbounds posData[(x-1)*posStride+1:3:x*posStride] = cw
 		@inbounds posData[(x-1)*posStride+2:3:x*posStride] = ch
-		@inbounds posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
+		if zc == 0
+			@inbounds posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
+		else
+			@inbounds posData[(x-1)*posStride+3:3:x*posStride] = zc
+		end
 	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
@@ -172,24 +183,33 @@ function ellipse(xc, yc, w, h)
 	end
 end
 
-function ellipse(xc, yc, w, h, tex)
+function ellipse(xc, yc, zc, w, h, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
 	switchShader("texturedShapes")
-	ellipse(xc, yc, w, h)
+	ellipse(xc, yc, zc, w, h)
 	switchShader("basicShapes")
 end
 
-function line(x1, y1, x2, y2)
+ellipse(xc, yc, w, h, tex::GLuint) = ellipse(xc, yc, 0, w, h, tex::GLuint)
+ellipse(xc, yc, w, h) = ellipse(xc, yc, 0, w, h)
+
+function line(x1, y1, z1, x2, y2, z2)
 	if state.strokeStuff
 		posData = zeros(GLfloat, 2*3*length(x1))
 		@inbounds posData[1:6:end] = x1
 		@inbounds posData[2:6:end] = y1
-		@inbounds posData[3:6:end] = eps(Float32)*(1:length(x1))
 
 		@inbounds posData[4:6:end] = x2
 		@inbounds posData[5:6:end] = y2
-		@inbounds posData[6:6:end] = eps(Float32)*(1:length(x1))
+
+		if z1 == 0 && z2 == 0
+			@inbounds posData[3:6:end] = eps(Float32)*(1:length(x1))
+			@inbounds posData[6:6:end] = eps(Float32)*(1:length(x1))
+		else
+			@inbounds posData[3:6:end] = z1
+			@inbounds posData[6:6:end] = z2
+		end
 
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
@@ -226,16 +246,24 @@ function line(x1, y1, x2, y2)
 	end
 end
 
-function line(x, y, tex)
+function line(x1, y1, z1, x2, y2, z2, tex::GLuint)
 	println("does it make sense to map a texture to a line?")
 end
 
-function point(x, y)
+line(x1, y1, x2, y2, tex::GLuint) = line(x1, y1, 0, x2, y2, 0, tex::GLuint)
+line(x1, y1, x2, y2) = line(x1, y1, 0, x2, y2, 0)
+
+function point(x, y, z)
 	if state.strokeStuff
 		posData = zeros(GLfloat, 3*length(x))
 		@inbounds posData[1:3:end] = x
 		@inbounds posData[2:3:end] = y
-		@inbounds posData[3:3:end] = eps(Float32)*(1:length(x))
+		if z == 0
+			@inbounds posData[3:3:end] = eps(Float32)*(1:length(x))
+		else
+			@inbounds posData[3:3:end] = z
+		end
+
 
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
@@ -249,29 +277,40 @@ function point(x, y)
 	end
 end
 
-function point(x, y, tex)
+function point(x, y, tex::GLuint)
 	println("does it make sense to map a texture to a point?")
 end
 
-function quad(x1, y1, x2, y2, x3, y3, x4, y4)
+point(x, y, tex::GLuint) = point(x, y, 0, tex::GLuint)
+point(x, y) = point(x, y, 0)
+
+function quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4)
 	posStride = 4*3
 	posData = zeros(GLfloat, 4*3*length(x1))
 	# vertices
 	@inbounds posData[1:posStride:end] = x1
 	@inbounds posData[2:posStride:end] = y1
-	@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(x1))
 
 	@inbounds posData[4:posStride:end] = x2
 	@inbounds posData[5:posStride:end] = y2
-	@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(x1))
 
 	@inbounds posData[7:posStride:end] = x3
 	@inbounds posData[8:posStride:end] = y3
-	@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(x1))
 
 	@inbounds posData[10:posStride:end] = x4
 	@inbounds posData[11:posStride:end] = y4
-	@inbounds posData[12:posStride:end] = eps(Float32)*(1:length(x1))
+
+	if z1 == 0 && z2 == 0 && z3 == 0 && z4 == 0
+		@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(x1))
+		@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(x1))
+		@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(x1))
+		@inbounds posData[12:posStride:end] = eps(Float32)*(1:length(x1))
+	else
+		@inbounds posData[3:posStride:end] = z1
+		@inbounds posData[6:posStride:end] = z2
+		@inbounds posData[9:posStride:end] = z3
+		@inbounds posData[12:posStride:end] = z4
+	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
 	glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
@@ -335,15 +374,18 @@ function quad(x1, y1, x2, y2, x3, y3, x4, y4)
 	end
 end
 
-function quad(x1, y1, x2, y2, x3, y3, x4, y4, tex)
+function quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
 	switchShader("texturedShapes")
-	quad(x1, y1, x2, y2, x3, y3, x4, y4)
+	quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4)
 	switchShader("basicShapes")
 end
 
-function rect(xtopleft, ytopleft, width, height)
+quad(x1, y1, x2, y2, x3, y3, x4, y4, tex::GLuint) = quad(x1, y1, 0, x2, y2, 0, x3, y3, 0, x4, y4, 0, tex::GLuint)
+quad(x1, y1, x2, y2, x3, y3, x4, y4) = quad(x1, y1, 0, x2, y2, 0, x3, y3, 0, x4, y4, 0)
+
+function rect(xtopleft, ytopleft, ztopleft, width, height)
 	if state.rectMode == "CENTER"
 		@inbounds xtopleft = xtopleft .- width./2
 		@inbounds ytopleft = ytopleft .- height./2
@@ -371,19 +413,27 @@ function rect(xtopleft, ytopleft, width, height)
 	# vertices
 	@inbounds posData[1:posStride:end] = x1
 	@inbounds posData[2:posStride:end] = y1
-	@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(xtopleft))
 
 	@inbounds posData[4:posStride:end] = x2
 	@inbounds posData[5:posStride:end] = y2
-	@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(xtopleft))
 
 	@inbounds posData[7:posStride:end] = x3
 	@inbounds posData[8:posStride:end] = y3
-	@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(xtopleft))
 
 	@inbounds posData[10:posStride:end] = x4
 	@inbounds posData[11:posStride:end] = y4
-	@inbounds posData[12:posStride:end] = eps(Float32)*(1:length(xtopleft))
+
+	if ztopleft == 0
+		@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(xtopleft))
+		@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(xtopleft))
+		@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(xtopleft))
+		@inbounds posData[12:posStride:end] = eps(Float32)*(1:length(xtopleft))
+	else
+		@inbounds posData[3:posStride:end] = ztopleft
+		@inbounds posData[6:posStride:end] = ztopleft
+		@inbounds posData[9:posStride:end] = ztopleft
+		@inbounds posData[12:posStride:end] = ztopleft
+	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
 	glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
@@ -451,28 +501,38 @@ function rect(xtopleft, ytopleft, width, height)
 	end
 end
 
-function rect(xtopleft, ytopleft, width, height, tex)
+function rect(xtopleft, ytopleft, ztopleft, width, height, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
 	switchShader("texturedShapes")
-	rect(xtopleft, ytopleft, width, height)
+	rect(xtopleft, ytopleft, ztopleft, width, height)
 	switchShader("basicShapes")
 end
 
-function triangle(x1, y1, x2, y2, x3, y3)
+rect(xtopleft, ytopleft, width, height, tex::GLuint) = rect(xtopleft, ytopleft, 0, width, height, tex::GLuint)
+rect(xtopleft, ytopleft, width, height) = rect(xtopleft, ytopleft, 0, width, height)
+
+function triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3)
 	posStride = 3*3
 	posData = zeros(GLfloat, 3*3*length(x1))
 	@inbounds posData[1:posStride:end] = x1
 	@inbounds posData[2:posStride:end] = y1
-	@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(x1))
 
 	@inbounds posData[4:posStride:end] = x2
 	@inbounds posData[5:posStride:end] = y2
-	@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(x1))
 
 	@inbounds posData[7:posStride:end] = x3
 	@inbounds posData[8:posStride:end] = y3
-	@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(x1))
+
+	if z1 == 0 && z2 == 0 && z3 == 0
+		@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(x1))
+		@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(x1))
+		@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(x1))
+	else
+		@inbounds posData[3:posStride:end] = z1
+		@inbounds posData[6:posStride:end] = z2
+		@inbounds posData[9:posStride:end] = z3
+	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
 	glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
@@ -517,13 +577,16 @@ function triangle(x1, y1, x2, y2, x3, y3)
 	end
 end
 
-function triangle(x1, y1, x2, y2, x3, y3, tex)
+function triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
 	switchShader("texturedShapes")
-	triangle(x1, y1, x2, y2, x3, y3)
+	triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3)
 	switchShader("basicShapes")
 end
+
+triangle(x1, y1, x2, y2, x3, y3, tex::GLuint) = triangle(x1, y1, 0, x2, y2, 0, x3, y3, 0, tex::GLuint)
+triangle(x1, y1, x2, y2, x3, y3) = triangle(x1, y1, 0, x2, y2, 0, x3, y3, 0)
 
 ## Curves
 
