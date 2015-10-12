@@ -82,7 +82,6 @@ tex = Processing.texture(image)
 	if Processing.mousePress(window, GLFW.MOUSE_BUTTON_LEFT)
 		println("bye!")
 		break
-		beep()
 	end
 	ftbf[Processing.frameCount()+1] = time_ns() - st
 	Processing.animate(window)

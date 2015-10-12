@@ -16,9 +16,9 @@ function text(str::String, x, y)
 	switchShader("fontDrawing")
 	glActiveTexture(GL_TEXTURE1)
     glEnable(GL_CULL_FACE)
-	# glBindBuffer(GL_ARRAY_BUFFER, globjs.vbos[2])
 
-    vertexData = zeros(GLfloat, 6*9*length(str))
+    posData = zeros(GLfloat, 2*6*length(str))
+    texData = zeros(GLfloat, 2*6*length(str))
 
     n = 0
     totyadv = 0
@@ -51,83 +51,54 @@ function text(str::String, x, y)
             continue
         end
 
-        @inbounds vertexData[n+1] = xpos
-        @inbounds vertexData[n+2] = ypos + h
-        @inbounds vertexData[n+3] = 0.0
-        @inbounds vertexData[n+4] = 1.0
+        @inbounds posData[n+1] = xpos
+        @inbounds posData[n+2] = ypos + h
 
-        @inbounds vertexData[n+5] = ch.atlasOffset
-        @inbounds vertexData[n+6] = 0.0
-        @inbounds vertexData[n+7] = 0.0
-        @inbounds vertexData[n+8] = 0.0
-        @inbounds vertexData[n+9] = 0.0
+        @inbounds posData[n+3] = xpos
+        @inbounds posData[n+4] = ypos
 
-		@inbounds vertexData[n+10] = xpos
-        @inbounds vertexData[n+11] = ypos
-        @inbounds vertexData[n+12] = 0.0
-        @inbounds vertexData[n+13] = 1.0
+        @inbounds posData[n+5] = xpos + w
+        @inbounds posData[n+6] = ypos
 
-        @inbounds vertexData[n+14] = ch.atlasOffset
-        @inbounds vertexData[n+15] = ch.size[2] / fontState.atlasHeight
-        @inbounds vertexData[n+16] = 0.0
-        @inbounds vertexData[n+17] = 0.0
-        @inbounds vertexData[n+18] = 0.0
+        @inbounds posData[n+7] = xpos
+        @inbounds posData[n+8] = ypos + h
 
-        @inbounds vertexData[n+19] = xpos + w
-        @inbounds vertexData[n+20] = ypos
-        @inbounds vertexData[n+21] = 0.0
-        @inbounds vertexData[n+22] = 1.0
+        @inbounds posData[n+9] = xpos + w
+        @inbounds posData[n+10] = ypos
 
-        @inbounds vertexData[n+23] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
-        @inbounds vertexData[n+24] = ch.size[2] / fontState.atlasHeight
-        @inbounds vertexData[n+25] = 0.0
-        @inbounds vertexData[n+26] = 0.0
-        @inbounds vertexData[n+27] = 0.0
+        @inbounds posData[n+11] = xpos + w
+        @inbounds posData[n+12] = ypos + h
 
-        @inbounds vertexData[n+28] = xpos
-        @inbounds vertexData[n+29] = ypos + h
-        @inbounds vertexData[n+30] = 0.0
-        @inbounds vertexData[n+31] = 1.0
+        @inbounds texData[n+1] = ch.atlasOffset
+        @inbounds texData[n+2] = 0.0
 
-        @inbounds vertexData[n+32] = ch.atlasOffset
-        @inbounds vertexData[n+33] = 0.0
-        @inbounds vertexData[n+34] = 0.0
-        @inbounds vertexData[n+35] = 0.0
-        @inbounds vertexData[n+36] = 0.0
+        @inbounds texData[n+3] = ch.atlasOffset
+        @inbounds texData[n+4] = ch.size[2] / fontState.atlasHeight
 
-        @inbounds vertexData[n+37] = xpos + w
-        @inbounds vertexData[n+38] = ypos
-        @inbounds vertexData[n+39] = 0.0
-        @inbounds vertexData[n+40] = 1.0
+        @inbounds texData[n+5] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
+        @inbounds texData[n+6] = ch.size[2] / fontState.atlasHeight
 
-        @inbounds vertexData[n+41] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
-        @inbounds vertexData[n+42] = ch.size[2] / fontState.atlasHeight
-        @inbounds vertexData[n+43] = 0.0
-        @inbounds vertexData[n+44] = 0.0
-        @inbounds vertexData[n+45] = 0.0
+        @inbounds texData[n+7] = ch.atlasOffset
+        @inbounds texData[n+8] = 0.0
 
-        @inbounds vertexData[n+46] = xpos + w
-        @inbounds vertexData[n+47] = ypos + h
-        @inbounds vertexData[n+48] = 0.0
-        @inbounds vertexData[n+49] = 1.0
+        @inbounds texData[n+9] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
+        @inbounds texData[n+10] = ch.size[2] / fontState.atlasHeight
 
-        @inbounds vertexData[n+50] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
-        @inbounds vertexData[n+51] = 0.0
-        @inbounds vertexData[n+52] = 0.0
-        @inbounds vertexData[n+53] = 0.0
-        @inbounds vertexData[n+54] = 0.0
+        @inbounds texData[n+11] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
+        @inbounds texData[n+12] = 0.0
 
 		@inbounds x += ch.advance[1] * state.textSize
-        n += 6*9
+        n += 2*6
         nforline += 1
 	end
-    # glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertexData), vertexData)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_DRAW)
+    glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
+    glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
+    glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
     glDrawArrays(GL_TRIANGLES, 0, 6*length(str))
 
     glDisable(GL_CULL_FACE)
 	switchShader("basicShapes")
-	# glBindBuffer(GL_ARRAY_BUFFER, globjs.vbos[1])
 end
 
 function textFont(fontname::String)
