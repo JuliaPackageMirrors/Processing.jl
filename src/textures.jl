@@ -9,17 +9,32 @@ function texture(img)
 	# so on).
 	# there must be an easier and faster way to do this with some sort of
 	# opengl trick, though.
-	w = size(imagesep,2)
-	h = size(imagesep,1)
-	imageGL = Array(Float64, w*h*3)
-	for y=1:h
-		row = 3 * w * (y - 1)
-		for x=1:w
-			col = 3 * (x - 1)
-	        for l=1:3
-	            imageGL[row+col+l] = imagesep[y,x,l]
-	        end
-	    end
+	if img.properties["colordim"] == 3
+		w = size(imagesep,2)
+		h = size(imagesep,1)
+		imageGL = Array(Float64, w*h*3)
+		for y=1:h
+			row = 3 * w * (y - 1)
+			for x=1:w
+				col = 3 * (x - 1)
+		        for l=1:3
+		            imageGL[row+col+l] = imagesep[y,x,l]
+		        end
+		    end
+		end
+	elseif img.properties["colordim"] == 1
+		w = size(imagesep,2)
+		h = size(imagesep,3)
+		imageGL = Array(Float64, w*h*3)
+		for y=1:h
+			row = 3 * w * (y - 1)
+			for x=1:w
+				col = 3 * (x - 1)
+		        for l=1:3
+		            imageGL[row+col+l] = imagesep[l,x,y]
+		        end
+		    end
+		end
 	end
 
 	tex = GLuint[0]
