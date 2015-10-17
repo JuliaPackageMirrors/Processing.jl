@@ -1,7 +1,8 @@
 export texture, textureMode, textureWrap, delTextures
 
 function texture(img)
-	imagesep = reinterpret(Float64, float64(data(separate(img))))
+	imagesep = separate(img)
+	imagedata = reinterpret(Float64, float64(data(imagesep)))
 
 	# the following takes the image and turns into a 1D array that opengl
 	# expects (i.e., the first 3 elements are the RGB values of the first
@@ -9,29 +10,29 @@ function texture(img)
 	# so on).
 	# there must be an easier and faster way to do this with some sort of
 	# opengl trick, though.
-	if img.properties["colordim"] == 3
-		w = size(imagesep,2)
-		h = size(imagesep,1)
+	if imagesep.properties["colordim"] == 3
+		w = size(imagedata,2)
+		h = size(imagedata,1)
 		imageGL = Array(Float64, w*h*3)
 		for y=1:h
 			row = 3 * w * (y - 1)
 			for x=1:w
 				col = 3 * (x - 1)
 		        for l=1:3
-		            imageGL[row+col+l] = imagesep[y,x,l]
+		            imageGL[row+col+l] = imagedata[y,x,l]
 		        end
 		    end
 		end
-	elseif img.properties["colordim"] == 1
-		w = size(imagesep,2)
-		h = size(imagesep,3)
+	elseif imagesep.properties["colordim"] == 1
+		w = size(imagedata,2)
+		h = size(imagedata,3)
 		imageGL = Array(Float64, w*h*3)
 		for y=1:h
 			row = 3 * w * (y - 1)
 			for x=1:w
 				col = 3 * (x - 1)
 		        for l=1:3
-		            imageGL[row+col+l] = imagesep[l,x,y]
+		            imageGL[row+col+l] = imagedata[l,x,y]
 		        end
 		    end
 		end
