@@ -105,15 +105,14 @@ function box(s)
 		# glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW)
 		# glDrawElements(GL_TRIANGLES, 6*length(xtopleft), GL_UNSIGNED_INT, C_NULL)
 	end
-	# if state.strokeStuff
-	#	loadColors!(colData, state.strokeCol, 35*4)
-	#	glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
-	#	glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-	#	shapeStride = 35
-	#	for x = 1:length(x1)
-	#		glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
-	#	end
-	# end
+	if state.strokeStuff
+		loadColors!(colData, state.strokeCol, 35*4)
+		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
+		for x = 1:length(s)
+			glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
+		end
+	end
 end
 
 function sphere(r)
@@ -131,7 +130,6 @@ function sphere(r)
 	# if state.strokeStuff
 	#	loadColors!(colData, state.strokeCol, 35*4)
 	#	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW)
-	#	shapeStride = 35
 	#	for x = 1:length(x1)
 	#		glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
 	#	end

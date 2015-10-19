@@ -70,7 +70,7 @@ function createcontextinfo()
 
 	glsl = split(bytestring(glGetString(GL_SHADING_LANGUAGE_VERSION)), ['.', ' '])
 	if length(glsl) >= 2
-		glsl = VersionNumber(int(glsl[1]), int(glsl[2]))
+		glsl = VersionNumber(parse(Int, glsl[1]), parse(Int, glsl[2]))
 		GLSL_VERSION = string(glsl.major) * rpad(string(glsl.minor),2,"0")
 	else
 		error("Unexpected version number string. Please report this bug! GLSL version string: $(glsl)")
@@ -78,12 +78,12 @@ function createcontextinfo()
 
 	glv = split(bytestring(glGetString(GL_VERSION)), ['.', ' '])
 	if length(glv) >= 2
-		glv = VersionNumber(int(glv[1]), int(glv[2]))
+		glv = VersionNumber(parse(Int, glv[1]), parse(Int, glv[2]))
 	else
 		error("Unexpected version number string. Please report this bug! OpenGL version string: $(glv)")
 	end
 
-	dict = (Symbol => Any)[]
+	dict = Dict{Symbol, Any}()
 	dict[:glsl_version]	= glsl
 	dict[:gl_version] = glv
 	dict[:gl_vendor] = bytestring(glGetString(GL_VENDOR))
@@ -127,7 +127,6 @@ function createShaderProgram(f, vertexShader, fragmentShader)
 	status = GLint[0]
 
 	glGetProgramiv(prog, GL_LINK_STATUS, status)
-	println(status)
 
 	if status[1] == GL_FALSE
 		glDeleteProgram(prog)

@@ -9,7 +9,7 @@ function background(r, g, b, a)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 end
 
-function colorMode(mode::String)
+function colorMode(mode::AbstractString)
     state.cMode = mode
 end
 

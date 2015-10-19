@@ -48,7 +48,7 @@ end
 
 function rotateX(angle)
 	m = rotationmatrix_x(angle)
-	m = float32(convert(Array, m)) # GLfloat = float32
+	m = map(Float32, convert(Array, m)) # GLfloat = float32
 
 	GLmatState.currMatrix = m * GLmatState.currMatrix
 
@@ -58,7 +58,7 @@ end
 
 function rotateY(angle)
 	m = rotationmatrix_y(angle)
-	m = float32(convert(Array, m)) # GLfloat = float32
+	m = map(Float32, convert(Array, m)) # GLfloat = float32
 
 	GLmatState.currMatrix = m * GLmatState.currMatrix
 
@@ -68,7 +68,7 @@ end
 
 function rotateZ(angle)
 	m = rotationmatrix_z(angle)
-	m = float32(convert(Array, m)) # GLfloat = float32
+	m = map(Float32, convert(Array, m)) # GLfloat = float32
 
 	GLmatState.currMatrix = m * GLmatState.currMatrix
 

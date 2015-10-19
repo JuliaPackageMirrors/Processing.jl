@@ -6,7 +6,7 @@ function imageMode(mode)
 	state.imageMode = mode
 end
 
-function loadImage(filename::String)
+function loadImage(filename::AbstractString)
     image = Images.imread(filename)
 end
 
@@ -14,7 +14,7 @@ function noTint()
     state.tintStuff = false
 end
 
-function save(filename::String)
+function save(filename::AbstractString)
 	data = Array{GLfloat}(3, state.width*2, state.height*2)
 	glReadPixels(0, 0, state.width*2, state.height*2, GL_RGB, GL_FLOAT, data)
 	data[1,:,:] = flipud(squeeze(data[1,:,:],1))

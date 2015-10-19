@@ -264,7 +264,6 @@ function point(x, y, z)
 			@inbounds posData[3:3:end] = z
 		end
 
-
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(posData), posData, GL_STATIC_DRAW)
 

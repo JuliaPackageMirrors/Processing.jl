@@ -1,19 +1,19 @@
-letters = ['a':'z',
-		'A':'Z',
-		'1':'9',
-		' ',
-		'	',
-		'.',
-		'"',
-		'!',
-		'?',
-		'/',
-		'(',
-		')',
-		'[',
-		']',
-		'{',
-		'}',
+letters = ['a':'z';
+		'A':'Z';
+		'1':'9';
+		' ';
+		'	';
+		'.';
+		'"';
+		'!';
+		'?';
+		'/';
+		'(';
+		')';
+		'[';
+		']';
+		'{';
+		'}';
 		'\\']
 
 function setupFontCharacters()
@@ -43,9 +43,8 @@ function setupFontCharacters()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-	max_aniso = [float32(0.0)]
+	max_aniso = [Float32(0.0)]
 	glGetFloatv(GL_TEXTURE_MAX_ANISOTROPY_EXT, max_aniso)
-	println(max_aniso)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16)
 
 	x = 0

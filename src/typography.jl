@@ -7,7 +7,7 @@ export textWidth, textHeight, textAscent, textDescent
 
 #loadFont
 
-function text(str::String, x, y)
+function text(str::AbstractString, x, y)
 	x = ((x+1)/2)*state.width
     xo = x
 	y = ((y+1)/2)*state.height
@@ -101,7 +101,7 @@ function text(str::String, x, y)
 	switchShader("basicShapes")
 end
 
-function textFont(fontname::String)
+function textFont(fontname::AbstractString)
     # for the time being, we only allow system fonts or those that have been
     # installed directly into the main system storage
     @windows_only state.fontFace = "C:/Windows/Fonts/"*fontname
@@ -125,24 +125,24 @@ function textSize(size)
 	state.textSize = size
 end
 
-function textWidth(str::String)
+function textWidth(str::AbstractString)
     # extents = Cairo.text_extents(cr, str)
     # return extents[1]
 end
 
-function textHeight(str::String)
+function textHeight(str::AbstractString)
     # extents = Cairo.text_extents(cr, str)
     # return extents[2]
 end
 
 ## Metrics
 
-function textAscent(str::String)
+function textAscent(str::AbstractString)
    # extents = Cairo.scaled_font_extents(cr, str)
    # return extents[1]
 end
 
-function textDescent(str::String)
+function textDescent(str::AbstractString)
    # extents = Cairo.scaled_font_extents(cr, str)
    # return extents[2]
 end

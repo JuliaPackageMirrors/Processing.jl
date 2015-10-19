@@ -27,7 +27,7 @@ type stateStruct
     drawTexture::Bool
     fbSize::Tuple{Int32,Int32}
     strokeWeight::Float32
-    fontFace::String
+    fontFace::AbstractString
     textSize::Float32
     height::Int
     width::Int
@@ -35,19 +35,19 @@ type stateStruct
     right::Float32
     top::Float32
     bottom::Float32
-    cMode::String
-    title::String
-    ellipseMode::String
-    rectMode::String
-    shapeMode::String
-    imageMode::String
+    cMode::AbstractString
+    title::AbstractString
+    ellipseMode::AbstractString
+    rectMode::AbstractString
+    shapeMode::AbstractString
+    imageMode::AbstractString
     frameRate::Int
     frameCount::Int
     fontsInitialized::Bool
 end
 
 # need to generalize font system
-state = stateStruct([RGB(0.8, 0.8, 0.8)], true, [RGB(1.0, 1.0, 1.0)], true, [RGB(0.0, 0.0, 0.0)], false, [RGB(0.0, 0.0, 0.0)], GLuint(0), false, (int32(0), int32(0)), 1.0, "", 0.4, 275, 275, -1., 1., 1., -1., "RGB", "Processing.jl", "CENTER", "CORNER", "CORNER", "CORNER", 60, 0, false)
+state = stateStruct([RGB(0.8, 0.8, 0.8)], true, [RGB(1.0, 1.0, 1.0)], true, [RGB(0.0, 0.0, 0.0)], false, [RGB(0.0, 0.0, 0.0)], GLuint(0), false, (Int32(0), Int32(0)), 1.0, "", 0.4, 275, 275, -1., 1., 1., -1., "RGB", "Processing.jl", "CENTER", "CORNER", "CORNER", "CORNER", 60, 0, false)
 
 # by default, use system fonts that are known to basically always be available
 @windows_only state.fontFace = "C:/Windows/Fonts/arial.ttf"
@@ -198,7 +198,7 @@ function screen(width, height; fullScreen=false)
     glViewport(0, 0, state.fbSize[1], state.fbSize[2])
     GLFW.SwapInterval(1)
 
-    println(createcontextinfo())
+    createcontextinfo()
 
     # framebuffer stuff
 
