@@ -28,6 +28,15 @@ function mousePress(window, button)
 	end
 end
 
+function mouseRelease(window, button)
+	GLFW.PollEvents()
+	if GLFW.GetMouseButton(window, button) == GLFW.RELEASE
+		return true
+	else
+		return false
+	end
+end
+
 function mouseX(window)
 	GLFW.PollEvents()
 	x, y = GLFW.GetCursorPos(window)

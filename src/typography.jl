@@ -8,10 +8,10 @@ export textWidth, textHeight, textAscent, textDescent
 #loadFont
 
 function text(str::AbstractString, x, y)
-	x = ((x+1)/2)*state.width
     xo = x
-	y = ((y+1)/2)*state.height
     yo = y
+	x = ((x+1)/2)*state.width
+	y = ((y+1)/2)*state.height
 
 	switchShader("fontDrawing")
 	glActiveTexture(GL_TEXTURE1)
@@ -99,6 +99,11 @@ function text(str::AbstractString, x, y)
 
     glDisable(GL_CULL_FACE)
 	switchShader("basicShapes")
+
+    sfx = state.fbSize[1]/state.width; sfy = state.fbSize[2]/state.height
+    x = (x./state.width - 0.5)*sfx
+    y = ((y - totyadv/nforline)./state.height - 0.5)*sfy
+    return [xo, yo, x, y]
 end
 
 function textFont(fontname::AbstractString)
