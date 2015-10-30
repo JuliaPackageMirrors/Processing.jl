@@ -102,6 +102,7 @@ type stateStruct
     mouse1Dragged::Bool
 end
 
+toplevels = Tk.Tk_Toplevel[]
 windows = Tk.TkWidget[]
 canvases = Tk.Canvas[]
 bpcontext = Cairo.CairoContext[]
@@ -117,6 +118,7 @@ function screen(w, h)
     states[end].h = h
 
     push!(windows, Tk.Window(states[end].title, states[end].w, states[end].h))
+    push!(toplevels, Tk.Tk_Toplevel(windows[end], Tk_Widget[]))
     push!(canvases, Tk.Canvas(windows[end]))
     Tk.pack(canvases[end])
     push!(contexts, Tk.getgc(canvases[end]))
@@ -173,6 +175,10 @@ function animate(wi)
     else
         println("Window is no longer open.")
     end
+end
+
+function endDrawing(wi)
+    Tk.destroy(toplevels[wi])
 end
 
 # allow user to control coordinate system
