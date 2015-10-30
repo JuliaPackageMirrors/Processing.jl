@@ -718,6 +718,7 @@ end
 #loadFont
 
 function text(wi, str::AbstractString, x, y; kwargs...)
+    Cairo.set_source(contexts[wi], states[wi].strokeCol)
     Cairo.text(contexts[wi], x, y, str; markup=false, kwargs...)
 
     # Cairo.text_path(contexts[wi], str)
