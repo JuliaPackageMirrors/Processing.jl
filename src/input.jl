@@ -1,5 +1,5 @@
 export keyPress, keyWait, spaceWait
-export mousePress, mouseX, mouseY
+export mousePress, mouseRelease, mouseX, mouseY
 
 function keyPress(window, button)
 	GLFW.PollEvents()
