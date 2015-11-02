@@ -341,7 +341,7 @@ end
 
 function endDrawing(window)
     GLFW.DestroyWindow(window)
-    GLFW.Terminate()
+    # GLFW.Terminate()
 end
 
 function drawingWindow(window)

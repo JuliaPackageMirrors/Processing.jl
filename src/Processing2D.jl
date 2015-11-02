@@ -713,6 +713,7 @@ function createFont(wi, fontName::AbstractString, fontSize)
     Cairo.select_font_face(contexts[wi], fontName, Cairo.FONT_SLANT_NORMAL,
                  Cairo.FONT_WEIGHT_NORMAL)
     Cairo.set_font_size(contexts[wi], fontSize)
+    Cairo.set_font_face(contexts[wi], "$fontName $(fontSize)px")
 end
 
 #loadFont
