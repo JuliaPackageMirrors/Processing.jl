@@ -38,7 +38,7 @@ Pkg.clone("https://github.com/rennis250/Processing.jl.git")
 
 ## Windows
 
-Only tested on a Windows 7 machine with an ATI card. So far, Images is failing during pre-compiliation on Windows, which removes any image related functionality from this package on Windows for the time being (e.g., loading images or drawing textures). However, that is being worked on. Aside, from that, install the package as usual:
+Only tested on a Windows 7 machine with an ATI card. Install the package as usual:
 
 ```julia
 Pkg.clone("https://github.com/SimonDanisch/FreeTypeAbstraction.jl.git")

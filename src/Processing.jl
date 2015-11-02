@@ -5,7 +5,7 @@ module Processing
 # Images is not precompiling correctly on Windows
 # with the new updates. Should hopefully be fixed
 # soon.
-@windows? using ModernGL, GLFW, Colors, Tau : using ModernGL, GLFW, Colors, Tau, Images
+using ModernGL, GLFW, Colors, Tau, Images
 using FreeType, FreeTypeAbstraction
 using GLAbstraction, GeometryTypes, Packing
 
@@ -67,13 +67,13 @@ shapeData = vertexStruct(GLfloat[], GLfloat[], -1, -1, GL_POINTS)
 include("openglaux.jl")
 include("color.jl")
 include("environment.jl")
-@windows? nothing : include("image.jl")
+include("image.jl")
 include("input.jl")
 include("pixels.jl")
 include("rendering.jl")
 include("shapes2d.jl")
 include("shapes3d.jl")
-@windows? nothing : include("textures.jl")
+include("textures.jl")
 
 type GLmatStruct
     currMatrix::Array{GLfloat, 2}
