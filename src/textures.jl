@@ -14,11 +14,11 @@ function texture(img)
 		w = size(imagedata,2)
 		h = size(imagedata,1)
 		imageGL = Array(Float64, w*h*3)
-		for y=1:h
+		@inbounds for y=1:h
 			row = 3 * w * (y - 1)
 			for x=1:w
 				col = 3 * (x - 1)
-		        for l=1:3
+		        @simd for l=1:3
 		            imageGL[row+col+l] = imagedata[y,x,l]
 		        end
 		    end
@@ -27,11 +27,11 @@ function texture(img)
 		w = size(imagedata,2)
 		h = size(imagedata,3)
 		imageGL = Array(Float64, w*h*3)
-		for y=1:h
+		@inbounds for y=1:h
 			row = 3 * w * (y - 1)
 			for x=1:w
 				col = 3 * (x - 1)
-		        for l=1:3
+		        @simd for l=1:3
 		            imageGL[row+col+l] = imagedata[l,x,y]
 		        end
 		    end
@@ -55,7 +55,7 @@ function texture(img)
 	# psychophysics
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16)
 
-	return tex[1]
+	return tex[1], w/state.width, h/state.height
 end
 
 function textureMode(mode)

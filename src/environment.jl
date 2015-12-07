@@ -1,26 +1,30 @@
 export cursor, focused, frameCount, frameRate
 export height, noCursor, noSmooth, smooth, width
 
+# start with arrow cursor by default, as expected
+currCursor = GLFW.CreateStandardCursor(GLFW.ARROW_CURSOR)
+
 function cursor(window)
 	GLFW.SetInputMode(window, GLFW.CURSOR, GLFW.CURSOR_NORMAL)
-	GLFW.SetCursor(window, GLFW.ARROW_CURSOR)
+	GLFW.SetCursor(window, currCursor)
 end
 
 function cursor(window, cursorType)
 	GLFW.SetInputMode(window, GLFW.CURSOR, GLFW.CURSOR_NORMAL)
 	if cursorType == "HAND"
-		GLFW.SetCursor(window, GLFW.HAND_CURSOR)
+		currCursor = GLFW.CreateStandardCursor(GLFW.HAND_CURSOR)
 	elseif cursorType == "ARROW"
-		GLFW.SetCursor(window, GLFW.ARROW_CURSOR)
+		currCursor = GLFW.CreateStandardCursor(GLFW.ARROW_CURSOR)
 	elseif cursorType == "CROSS"
-		GLFW.SetCursor(window, GLFW.CROSSHAIR_CURSOR)
+		currCursor = GLFW.CreateStandardCursor(GLFW.CROSSHAIR_CURSOR)
 	elseif cursorType == "MOVE"
-		GLFW.SetCursor(window, GLFW.HRESIZE_CURSOR)
+		currCursor = GLFW.CreateStandardCursor(GLFW.IBEAM_CURSOR)
 	elseif cursorType == "TEXT"
-		GLFW.SetCursor(window, GLFW.IBEAM_CURSOR)
+		currCursor = GLFW.CreateStandardCursor(GLFW.IBEAM_CURSOR)
 	elseif cursorType == "WAIT"
-		# GLFW.SetCursor(window, GLFW.HAND_CURSOR)
+		# currCursor = GLFW.CreateStandardCursor(GLFW.HAND_CURSOR)
 	end
+	GLFW.SetCursor(window, currCursor)
 end
 
 function focused(window)

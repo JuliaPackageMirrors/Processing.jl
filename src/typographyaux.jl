@@ -30,7 +30,7 @@ function setupFontCharacters()
 
 	w = 0
 	h = 0
-	for c in letters
+	@inbounds for c in letters
 		img, metric = renderface(fontState.face, c)
 		w += size(img, 1)
 		h = max(h, size(img, 2))
@@ -50,7 +50,7 @@ function setupFontCharacters()
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16)
 
 	x = 0
-	for c in letters
+	@inbounds for c in letters
 		img, metric = renderface(fontState.face, c)
 
 		w = size(img, 1)
@@ -105,11 +105,11 @@ function setupFontCharacters()
 		# glTexSubImage2D(GL_TEXTURE_2D, 0, x, 0, w, h, GL_RED, GL_FLOAT, distfield)
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x, 0, w, h, GL_RED, GL_UNSIGNED_BYTE, img)
 
-        @inbounds character = textCharacter([w, h],
+        character = textCharacter([w, h],
 					[metric.horizontal_bearing[1], metric.horizontal_bearing[2]],
 					[metric.advance[1], metric.advance[2]],
 					x / fontState.atlasWidth)
-        @inbounds fontState.characters[c] = character
+        fontState.characters[c] = character
         x += w
 	end
 

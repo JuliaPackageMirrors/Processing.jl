@@ -11,6 +11,16 @@ include("shapesaux.jl")
 ## 2D Primitives
 
 function arc(xc, yc, zc, w, h, start, stop)
+	if state.preserveAspectRatio
+		if state.aspectRatio > 1
+			xc = xc ./ state.aspectRatio
+			w = w ./ state.aspectRatio
+		else
+			yc = yc .* state.aspectRatio
+			h = h .* state.aspectRatio
+		end
+	end
+
 	if state.ellipseMode == "CENTER"
 		w = w ./ 2
 		h = h ./ 2
@@ -28,22 +38,22 @@ function arc(xc, yc, zc, w, h, start, stop)
 
 	numSlices = 200+1
 	cs = Array{Float64}(2, length(xc), numSlices-1)
-	for x = 1:length(xc)
-		@inbounds cs[1,x,:] = cos(linspace(start[x], stop[x], numSlices-1))
-		@inbounds cs[2,x,:] = sin(linspace(start[x], stop[x], numSlices-1))
+	@inbounds @simd for x = 1:length(xc)
+		cs[1,x,:] = cos(linspace(start[x], stop[x], numSlices-1))
+		cs[2,x,:] = sin(linspace(start[x], stop[x], numSlices-1))
 	end
 
 	posStride = numSlices*3
 	posData = zeros(GLfloat, numSlices*3*length(xc))
-	for x = 1:length(xc)
-		@inbounds cw = [xc[x]; vec(cs[1,x,:]) .* w[x] .+ xc[x]]
-		@inbounds ch = [yc[x]; vec(cs[2,x,:]) .* h[x] .+ yc[x]]
-		@inbounds posData[(x-1)*posStride+1:3:x*posStride] = cw
-		@inbounds posData[(x-1)*posStride+2:3:x*posStride] = ch
+	@inbounds @simd for x = 1:length(xc)
+		cw = [xc[x]; vec(cs[1,x,:]) .* w[x] .+ xc[x]]
+		ch = [yc[x]; vec(cs[2,x,:]) .* h[x] .+ yc[x]]
+		posData[(x-1)*posStride+1:3:x*posStride] = cw
+		posData[(x-1)*posStride+2:3:x*posStride] = ch
 		if zc == 0
-			@inbounds posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
+			posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
 		else
-			@inbounds posData[(x-1)*posStride+3:3:x*posStride] = zc
+			posData[(x-1)*posStride+3:3:x*posStride] = zc
 		end
 	end
 
@@ -54,14 +64,14 @@ function arc(xc, yc, zc, w, h, start, stop)
 	# if state.drawTexture
 	#	# texcoords
 	#	texData = zeros(GLfloat, numSlices*4*length(xc))
-	#	@inbounds texData[8:texStride:end] = 0
-	#	@inbounds texData[9:texStride:end] = 0
+	#	texData[8:texStride:end] = 0
+	#	texData[9:texStride:end] = 0
 
-	#	@inbounds texData[17:texStride:end] = 1
-	#	@inbounds texData[18:texStride:end] = 0
+	#	texData[17:texStride:end] = 1
+	#	texData[18:texStride:end] = 0
 
-	#	@inbounds texData[26:texStride:end] = 1
-	#	@inbounds texData[27:texStride:end] = 1
+	#	texData[26:texStride:end] = 1
+	#	texData[27:texStride:end] = 1
 
 	# glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
     # glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
@@ -81,16 +91,16 @@ function arc(xc, yc, zc, w, h, start, stop)
 		# does it even make senes to do so? it could produce funky
 		# results that might be useful.
 		# glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
-		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_TRIANGLE_FAN, (x-1)*shapeStride, shapeStride)
+		@inbounds @simd for x = 1:length(xc)
+			glDrawArrays(GL_TRIANGLE_FAN, (x-1)*shapeStride, shapeStride)
 		end
 	end
 	if state.strokeStuff
 		loadColors!(colData, state.strokeCol, numSlices*4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_LINES, (x-1)*shapeStride+1, shapeStride-1)
+		@inbounds @simd for x = 1:length(xc)
+			glDrawArrays(GL_LINES, (x-1)*shapeStride+1, shapeStride-1)
 		end
 	end
 end
@@ -107,6 +117,16 @@ arc(xc, yc, w, h, start, stop, tex::GLuint) = arc(xc, yc, 0, w, h, start, stop, 
 arc(xc, yc, w, h, start, stop) = arc(xc, yc, 0, w, h, start, stop)
 
 function ellipse(xc, yc, zc, w, h)
+	if state.preserveAspectRatio
+		if state.aspectRatio > 1
+			xc = xc ./ state.aspectRatio
+			w = w ./ state.aspectRatio
+		else
+			yc = yc .* state.aspectRatio
+			h = h .* state.aspectRatio
+		end
+	end
+
 	if state.ellipseMode == "CENTER"
 		w = w ./ 2
 		h = h ./ 2
@@ -128,15 +148,15 @@ function ellipse(xc, yc, zc, w, h)
 
 	posStride = numSlices*3
 	posData = zeros(GLfloat, numSlices*3*length(xc))
-	for x = 1:length(xc)
-		@inbounds cw = [xc[x]; c .* w[x] .+ xc[x]]
-		@inbounds ch = [yc[x]; s .* h[x] .+ yc[x]]
-		@inbounds posData[(x-1)*posStride+1:3:x*posStride] = cw
-		@inbounds posData[(x-1)*posStride+2:3:x*posStride] = ch
+	@inbounds @simd for x = 1:length(xc)
+		cw = [xc[x]; c .* w[x] .+ xc[x]]
+		ch = [yc[x]; s .* h[x] .+ yc[x]]
+		posData[(x-1)*posStride+1:3:x*posStride] = cw
+		posData[(x-1)*posStride+2:3:x*posStride] = ch
 		if zc == 0
-			@inbounds posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
+			posData[(x-1)*posStride+3:3:x*posStride] = eps(Float32)*x
 		else
-			@inbounds posData[(x-1)*posStride+3:3:x*posStride] = zc
+			posData[(x-1)*posStride+3:3:x*posStride] = zc
 		end
 	end
 
@@ -146,14 +166,14 @@ function ellipse(xc, yc, zc, w, h)
 	# if state.drawTexture
 	#	# texcoords
 	#	texData = zeros(GLfloat, numSlices*4*length(xc))
-	#	@inbounds texData[8:vertexStride:end] = 0
-	#	@inbounds texData[9:vertexStride:end] = 0
+	#	texData[8:vertexStride:end] = 0
+	#	texData[9:vertexStride:end] = 0
 
-	#	@inbounds texData[17:vertexStride:end] = 1
-	#	@inbounds texData[18:vertexStride:end] = 0
+	#	texData[17:vertexStride:end] = 1
+	#	texData[18:vertexStride:end] = 0
 
-	#	@inbounds texData[26:vertexStride:end] = 1
-	#	@inbounds texData[27:vertexStride:end] = 1
+	#	texData[26:vertexStride:end] = 1
+	#	texData[27:vertexStride:end] = 1
 
 	# glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
 	# glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
@@ -169,16 +189,16 @@ function ellipse(xc, yc, zc, w, h)
 		loadColors!(colData, state.fillCol, numSlices*4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_TRIANGLE_FAN, (x-1)*shapeStride, shapeStride)
+		@inbounds @simd for x = 1:length(xc)
+			glDrawArrays(GL_TRIANGLE_FAN, (x-1)*shapeStride, shapeStride)
 		end
 	end
 	if state.strokeStuff
 		loadColors!(colData, state.strokeCol, numSlices*4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-		for x = 1:length(xc)
-			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride+1, shapeStride-1)
+		@inbounds @simd for x = 1:length(xc)
+			glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride+1, shapeStride-1)
 		end
 	end
 end
@@ -195,20 +215,30 @@ ellipse(xc, yc, w, h, tex::GLuint) = ellipse(xc, yc, 0, w, h, tex::GLuint)
 ellipse(xc, yc, w, h) = ellipse(xc, yc, 0, w, h)
 
 function line(x1, y1, z1, x2, y2, z2)
+	if state.preserveAspectRatio
+		if state.aspectRatio > 1
+			x1 = x1 ./ state.aspectRatio
+			x2 = x2 ./ state.aspectRatio
+		else
+			y1 = y1 .* state.aspectRatio
+			y2 = y2 .* state.aspectRatio
+		end
+	end
+
 	if state.strokeStuff
 		posData = zeros(GLfloat, 2*3*length(x1))
-		@inbounds posData[1:6:end] = x1
-		@inbounds posData[2:6:end] = y1
+		posData[1:6:end] = x1
+		posData[2:6:end] = y1
 
-		@inbounds posData[4:6:end] = x2
-		@inbounds posData[5:6:end] = y2
+		posData[4:6:end] = x2
+		posData[5:6:end] = y2
 
 		if z1 == 0 && z2 == 0
-			@inbounds posData[3:6:end] = eps(Float32)*(1:length(x1))
-			@inbounds posData[6:6:end] = eps(Float32)*(1:length(x1))
+			posData[3:6:end] = eps(Float32)*(1:length(x1))
+			posData[6:6:end] = eps(Float32)*(1:length(x1))
 		else
-			@inbounds posData[3:6:end] = z1
-			@inbounds posData[6:6:end] = z2
+			posData[3:6:end] = z1
+			posData[6:6:end] = z2
 		end
 
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
@@ -217,26 +247,26 @@ function line(x1, y1, z1, x2, y2, z2)
 		shapeStride = 2*4
 		colData = zeros(GLfloat, 2*4*length(x1))
 		if size(state.strokeCol, 1) == 1
-			@inbounds colData[1:8:end] = state.strokeCol[1].r
-			@inbounds colData[2:8:end] = state.strokeCol[1].g
-			@inbounds colData[3:8:end] = state.strokeCol[1].b
-			@inbounds colData[4:8:end] = 1.0
+			colData[1:8:end] = state.strokeCol[1].r
+			colData[2:8:end] = state.strokeCol[1].g
+			colData[3:8:end] = state.strokeCol[1].b
+			colData[4:8:end] = 1.0
 
-			@inbounds colData[5:8:end] = state.strokeCol[1].r
-			@inbounds colData[6:8:end] = state.strokeCol[1].g
-			@inbounds colData[7:8:end] = state.strokeCol[1].b
-			@inbounds colData[8:8:end] = 1.0
+			colData[5:8:end] = state.strokeCol[1].r
+			colData[6:8:end] = state.strokeCol[1].g
+			colData[7:8:end] = state.strokeCol[1].b
+			colData[8:8:end] = 1.0
 		else
-			for c = 1:size(state.strokeCol, 1)
-				@inbounds colData[(c-1)*shapeStride+1:shapeStride:c*shapeStride] = state.strokeCol[c].r
-				@inbounds colData[(c-1)*shapeStride+2:shapeStride:c*shapeStride] = state.strokeCol[c].g
-				@inbounds colData[(c-1)*shapeStride+3:shapeStride:c*shapeStride] = state.strokeCol[c].b
-				@inbounds colData[(c-1)*shapeStride+4:shapeStride:c*shapeStride] = 1.0
+			@inbounds @simd for c = 1:size(state.strokeCol, 1)
+				colData[(c-1)*shapeStride+1:shapeStride:c*shapeStride] = state.strokeCol[c].r
+				colData[(c-1)*shapeStride+2:shapeStride:c*shapeStride] = state.strokeCol[c].g
+				colData[(c-1)*shapeStride+3:shapeStride:c*shapeStride] = state.strokeCol[c].b
+				colData[(c-1)*shapeStride+4:shapeStride:c*shapeStride] = 1.0
 
-				@inbounds colData[(c-1)*shapeStride+5:shapeStride:c*shapeStride] = state.strokeCol[c].r
-				@inbounds colData[(c-1)*shapeStride+6:shapeStride:c*shapeStride] = state.strokeCol[c].g
-				@inbounds colData[(c-1)*shapeStride+7:shapeStride:c*shapeStride] = state.strokeCol[c].b
-				@inbounds colData[(c-1)*shapeStride+8:shapeStride:c*shapeStride] = 1.0
+				colData[(c-1)*shapeStride+5:shapeStride:c*shapeStride] = state.strokeCol[c].r
+				colData[(c-1)*shapeStride+6:shapeStride:c*shapeStride] = state.strokeCol[c].g
+				colData[(c-1)*shapeStride+7:shapeStride:c*shapeStride] = state.strokeCol[c].b
+				colData[(c-1)*shapeStride+8:shapeStride:c*shapeStride] = 1.0
 			end
 		end
 
@@ -254,14 +284,22 @@ line(x1, y1, x2, y2, tex::GLuint) = line(x1, y1, 0, x2, y2, 0, tex::GLuint)
 line(x1, y1, x2, y2) = line(x1, y1, 0, x2, y2, 0)
 
 function point(x, y, z)
+	if state.preserveAspectRatio
+		if state.aspectRatio > 1
+			x = x ./ state.aspectRatio
+		else
+			y = y .* state.aspectRatio
+		end
+	end
+
 	if state.strokeStuff
 		posData = zeros(GLfloat, 3*length(x))
-		@inbounds posData[1:3:end] = x
-		@inbounds posData[2:3:end] = y
+		posData[1:3:end] = x
+		posData[2:3:end] = y
 		if z == 0
-			@inbounds posData[3:3:end] = eps(Float32)*(1:length(x))
+			posData[3:3:end] = eps(Float32)*(1:length(x))
 		else
-			@inbounds posData[3:3:end] = z
+			posData[3:3:end] = z
 		end
 
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
@@ -284,31 +322,45 @@ point(x, y, tex::GLuint) = point(x, y, 0, tex::GLuint)
 point(x, y) = point(x, y, 0)
 
 function quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4)
+	if state.preserveAspectRatio
+		if state.aspectRatio > 1
+			x1 = x1 ./ state.aspectRatio
+			x2 = x2 .* state.aspectRatio
+			x3 = x3 .* state.aspectRatio
+			x4 = x4 .* state.aspectRatio
+		else
+			y1 = y1 ./ state.aspectRatio
+			y2 = y2 .* state.aspectRatio
+			y3 = y3 .* state.aspectRatio
+			y4 = y4 .* state.aspectRatio
+		end
+	end
+
 	posStride = 4*3
 	posData = zeros(GLfloat, 4*3*length(x1))
 	# vertices
-	@inbounds posData[1:posStride:end] = x1
-	@inbounds posData[2:posStride:end] = y1
+	posData[1:posStride:end] = x1
+	posData[2:posStride:end] = y1
 
-	@inbounds posData[4:posStride:end] = x2
-	@inbounds posData[5:posStride:end] = y2
+	posData[4:posStride:end] = x2
+	posData[5:posStride:end] = y2
 
-	@inbounds posData[7:posStride:end] = x3
-	@inbounds posData[8:posStride:end] = y3
+	posData[7:posStride:end] = x3
+	posData[8:posStride:end] = y3
 
-	@inbounds posData[10:posStride:end] = x4
-	@inbounds posData[11:posStride:end] = y4
+	posData[10:posStride:end] = x4
+	posData[11:posStride:end] = y4
 
 	if z1 == 0 && z2 == 0 && z3 == 0 && z4 == 0
-		@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(x1))
-		@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(x1))
-		@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(x1))
-		@inbounds posData[12:posStride:end] = eps(Float32)*(1:length(x1))
+		posData[3:posStride:end] = eps(Float32)*(1:length(x1))
+		posData[6:posStride:end] = eps(Float32)*(1:length(x1))
+		posData[9:posStride:end] = eps(Float32)*(1:length(x1))
+		posData[12:posStride:end] = eps(Float32)*(1:length(x1))
 	else
-		@inbounds posData[3:posStride:end] = z1
-		@inbounds posData[6:posStride:end] = z2
-		@inbounds posData[9:posStride:end] = z3
-		@inbounds posData[12:posStride:end] = z4
+		posData[3:posStride:end] = z1
+		posData[6:posStride:end] = z2
+		posData[9:posStride:end] = z3
+		posData[12:posStride:end] = z4
 	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
@@ -317,14 +369,14 @@ function quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4)
 	if state.drawTexture
 		# texcoords
 		# texData = zeros(GLfloat, numSlices*4*length(xc))
-		# @inbounds texData[8:vertexStride:end] = 0
-		# @inbounds texData[9:vertexStride:end] = 0
+		# texData[8:vertexStride:end] = 0
+		# texData[9:vertexStride:end] = 0
 
-		# @inbounds texData[17:vertexStride:end] = 1
-		# @inbounds texData[18:vertexStride:end] = 0
+		# texData[17:vertexStride:end] = 1
+		# texData[18:vertexStride:end] = 0
 
-		# @inbounds texData[26:vertexStride:end] = 1
-		# @inbounds texData[27:vertexStride:end] = 1
+		# texData[26:vertexStride:end] = 1
+		# texData[27:vertexStride:end] = 1
 
 		# glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
 		# glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
@@ -332,21 +384,21 @@ function quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4)
 
 	elements = zeros(GLuint, 6*length(x1))
 
-	@inbounds elements[1] = 0
-	@inbounds elements[2] = 1
-	@inbounds elements[3] = 2
-	@inbounds elements[4] = 2
-	@inbounds elements[5] = 3
-	@inbounds elements[6] = 0
+	elements[1] = 0
+	elements[2] = 1
+	elements[3] = 2
+	elements[4] = 2
+	elements[5] = 3
+	elements[6] = 0
 
 	index = 7
-	for x = 2:length(x1)
-		@inbounds elements[index] = elements[index-6] + 4
-		@inbounds elements[index+1] = elements[(index-6)+1] + 4
-		@inbounds elements[index+2] = elements[(index-6)+2] + 4
-		@inbounds elements[index+3] = elements[(index-6)+3] + 4
-		@inbounds elements[index+4] = elements[(index-6)+4] + 4
-		@inbounds elements[index+5] = elements[(index-6)+5] + 4
+	@inbounds @simd for x = 2:length(x1)
+		elements[index] = elements[index-6] + 4
+		elements[index+1] = elements[(index-6)+1] + 4
+		elements[index+2] = elements[(index-6)+2] + 4
+		elements[index+3] = elements[(index-6)+3] + 4
+		elements[index+4] = elements[(index-6)+4] + 4
+		elements[index+5] = elements[(index-6)+5] + 4
 		index += 6
 	end
 
@@ -367,8 +419,8 @@ function quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		shapeStride = 4
-		for x = 1:length(x1)
-			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
+		@inbounds @simd for x = 1:length(x1)
+			glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
 		end
 	end
 end
@@ -385,53 +437,63 @@ quad(x1, y1, x2, y2, x3, y3, x4, y4, tex::GLuint) = quad(x1, y1, 0, x2, y2, 0, x
 quad(x1, y1, x2, y2, x3, y3, x4, y4) = quad(x1, y1, 0, x2, y2, 0, x3, y3, 0, x4, y4, 0)
 
 function rect(xtopleft, ytopleft, ztopleft, width, height)
-	if state.rectMode == "CENTER"
-		@inbounds xtopleft = xtopleft .- width./2
-		@inbounds ytopleft = ytopleft .- height./2
-	elseif state.rectMode == "RADIUS"
-		@inbounds xtopleft = xtopleft .- width
-		@inbounds ytopleft = ytopleft .- height
-		@inbounds width = 2 .* width
-		@inbounds height = 2 .* height
-	elseif state.rectMode == "CORNERS"
-		@inbounds width = width .- xtopleft
-		@inbounds height = height .- ytopleft
+	if state.preserveAspectRatio
+		if state.aspectRatio > 1
+			xtopleft = xtopleft ./ state.aspectRatio
+			width = width ./ state.aspectRatio
+		else
+			ytopleft = ytopleft ./ state.aspectRatio
+			height = height ./ state.aspectRatio
+		end
 	end
 
-	@inbounds x1 = xtopleft
-	@inbounds y1 = ytopleft
-	@inbounds x2 = xtopleft .+ width
-	@inbounds y2 = ytopleft
-	@inbounds x3 = xtopleft .+ width
-	@inbounds y3 = ytopleft .- height
-	@inbounds x4 = xtopleft
-	@inbounds y4 = ytopleft .- height
+	if state.rectMode == "CENTER"
+		xtopleft = xtopleft .- width./2
+		ytopleft = ytopleft .- height./2
+	elseif state.rectMode == "RADIUS"
+		xtopleft = xtopleft .- width
+		ytopleft = ytopleft .- height
+		width = 2 .* width
+		height = 2 .* height
+	elseif state.rectMode == "CORNERS"
+		width = width .- xtopleft
+		height = height .- ytopleft
+	end
+
+	x1 = xtopleft
+	y1 = ytopleft
+	x2 = xtopleft .+ width
+	y2 = ytopleft
+	x3 = xtopleft .+ width
+	y3 = ytopleft .- height
+	x4 = xtopleft
+	y4 = ytopleft .- height
 
 	posStride = 4*3
 	posData = zeros(GLfloat, 4*3*length(xtopleft))
 	# vertices
-	@inbounds posData[1:posStride:end] = x1
-	@inbounds posData[2:posStride:end] = y1
+	posData[1:posStride:end] = x1
+	posData[2:posStride:end] = y1
 
-	@inbounds posData[4:posStride:end] = x2
-	@inbounds posData[5:posStride:end] = y2
+	posData[4:posStride:end] = x2
+	posData[5:posStride:end] = y2
 
-	@inbounds posData[7:posStride:end] = x3
-	@inbounds posData[8:posStride:end] = y3
+	posData[7:posStride:end] = x3
+	posData[8:posStride:end] = y3
 
-	@inbounds posData[10:posStride:end] = x4
-	@inbounds posData[11:posStride:end] = y4
+	posData[10:posStride:end] = x4
+	posData[11:posStride:end] = y4
 
 	if ztopleft == 0
-		@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(xtopleft))
-		@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(xtopleft))
-		@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(xtopleft))
-		@inbounds posData[12:posStride:end] = eps(Float32)*(1:length(xtopleft))
+		posData[3:posStride:end] = eps(Float32)*(1:length(xtopleft))
+		posData[6:posStride:end] = eps(Float32)*(1:length(xtopleft))
+		posData[9:posStride:end] = eps(Float32)*(1:length(xtopleft))
+		posData[12:posStride:end] = eps(Float32)*(1:length(xtopleft))
 	else
-		@inbounds posData[3:posStride:end] = ztopleft
-		@inbounds posData[6:posStride:end] = ztopleft
-		@inbounds posData[9:posStride:end] = ztopleft
-		@inbounds posData[12:posStride:end] = ztopleft
+		posData[3:posStride:end] = ztopleft
+		posData[6:posStride:end] = ztopleft
+		posData[9:posStride:end] = ztopleft
+		posData[12:posStride:end] = ztopleft
 	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
@@ -441,17 +503,17 @@ function rect(xtopleft, ytopleft, ztopleft, width, height)
 		# texcoords
 		texStride = 4*2
 		texData = zeros(GLfloat, 4*2*length(xtopleft))
-		@inbounds texData[1:texStride:end] = 0
-		@inbounds texData[2:texStride:end] = 0
+		texData[1:texStride:end] = 0
+		texData[2:texStride:end] = 0
 
-		@inbounds texData[3:texStride:end] = 1
-		@inbounds texData[4:texStride:end] = 0
+		texData[3:texStride:end] = 1
+		texData[4:texStride:end] = 0
 
-		@inbounds texData[5:texStride:end] = 1
-		@inbounds texData[6:texStride:end] = 1
+		texData[5:texStride:end] = 1
+		texData[6:texStride:end] = 1
 
-		@inbounds texData[7:texStride:end] = 0
-		@inbounds texData[8:texStride:end] = 1
+		texData[7:texStride:end] = 0
+		texData[8:texStride:end] = 1
 
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
@@ -459,21 +521,21 @@ function rect(xtopleft, ytopleft, ztopleft, width, height)
 
 	elements = zeros(GLuint, 6*length(xtopleft))
 
-	@inbounds elements[1] = 0
-	@inbounds elements[2] = 1
-	@inbounds elements[3] = 2
-	@inbounds elements[4] = 2
-	@inbounds elements[5] = 3
-	@inbounds elements[6] = 0
+	elements[1] = 0
+	elements[2] = 1
+	elements[3] = 2
+	elements[4] = 2
+	elements[5] = 3
+	elements[6] = 0
 
 	index = 7
-	for x = 2:length(x1)
-		@inbounds elements[index] = elements[index-6] + 4
-		@inbounds elements[index+1] = elements[(index-6)+1] + 4
-		@inbounds elements[index+2] = elements[(index-6)+2] + 4
-		@inbounds elements[index+3] = elements[(index-6)+3] + 4
-		@inbounds elements[index+4] = elements[(index-6)+4] + 4
-		@inbounds elements[index+5] = elements[(index-6)+5] + 4
+	@inbounds @simd for x = 2:length(x1)
+		elements[index] = elements[index-6] + 4
+		elements[index+1] = elements[(index-6)+1] + 4
+		elements[index+2] = elements[(index-6)+2] + 4
+		elements[index+3] = elements[(index-6)+3] + 4
+		elements[index+4] = elements[(index-6)+4] + 4
+		elements[index+5] = elements[(index-6)+5] + 4
 		index += 6
 	end
 
@@ -494,8 +556,8 @@ function rect(xtopleft, ytopleft, ztopleft, width, height)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
 		shapeStride = 4
-		for x = 1:length(x1)
-			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
+		@inbounds @simd for x = 1:length(x1)
+			glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
 		end
 	end
 end
@@ -512,25 +574,37 @@ rect(xtopleft, ytopleft, width, height, tex::GLuint) = rect(xtopleft, ytopleft, 
 rect(xtopleft, ytopleft, width, height) = rect(xtopleft, ytopleft, 0, width, height)
 
 function triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3)
+	if state.preserveAspectRatio
+		if state.aspectRatio > 1
+			x1 = x1 ./ state.aspectRatio
+			x2 = x2 .* state.aspectRatio
+			x3 = x3 .* state.aspectRatio
+		else
+			y1 = y1 ./ state.aspectRatio
+			y2 = y2 .* state.aspectRatio
+			y3 = y3 .* state.aspectRatio
+		end
+	end
+
 	posStride = 3*3
 	posData = zeros(GLfloat, 3*3*length(x1))
-	@inbounds posData[1:posStride:end] = x1
-	@inbounds posData[2:posStride:end] = y1
+	posData[1:posStride:end] = x1
+	posData[2:posStride:end] = y1
 
-	@inbounds posData[4:posStride:end] = x2
-	@inbounds posData[5:posStride:end] = y2
+	posData[4:posStride:end] = x2
+	posData[5:posStride:end] = y2
 
-	@inbounds posData[7:posStride:end] = x3
-	@inbounds posData[8:posStride:end] = y3
+	posData[7:posStride:end] = x3
+	posData[8:posStride:end] = y3
 
 	if z1 == 0 && z2 == 0 && z3 == 0
-		@inbounds posData[3:posStride:end] = eps(Float32)*(1:length(x1))
-		@inbounds posData[6:posStride:end] = eps(Float32)*(1:length(x1))
-		@inbounds posData[9:posStride:end] = eps(Float32)*(1:length(x1))
+		posData[3:posStride:end] = eps(Float32)*(1:length(x1))
+		posData[6:posStride:end] = eps(Float32)*(1:length(x1))
+		posData[9:posStride:end] = eps(Float32)*(1:length(x1))
 	else
-		@inbounds posData[3:posStride:end] = z1
-		@inbounds posData[6:posStride:end] = z2
-		@inbounds posData[9:posStride:end] = z3
+		posData[3:posStride:end] = z1
+		posData[6:posStride:end] = z2
+		posData[9:posStride:end] = z3
 	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
@@ -539,14 +613,14 @@ function triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3)
 	if state.drawTexture
 		# texcoords
 		# texData = zeros(GLfloat, numSlices*4*length(xc))
-		# @inbounds texData[8:vertexStride:end] = 0
-		# @inbounds texData[9:vertexStride:end] = 0
+		# texData[8:vertexStride:end] = 0
+		# texData[9:vertexStride:end] = 0
 
-		# @inbounds texData[17:vertexStride:end] = 1
-		# @inbounds texData[18:vertexStride:end] = 0
+		# texData[17:vertexStride:end] = 1
+		# texData[18:vertexStride:end] = 0
 
-		# @inbounds texData[26:vertexStride:end] = 1
-		# @inbounds texData[27:vertexStride:end] = 1
+		# texData[26:vertexStride:end] = 1
+		# texData[27:vertexStride:end] = 1
 		#
 		# glBindBuffer(GL_ARRAY_BUFFER, globjs.texvbos[globjs.texind])
     # glBufferData(GL_ARRAY_BUFFER, sizeof(texData), texData, GL_STATIC_DRAW)
@@ -562,16 +636,16 @@ function triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3)
 		loadColors!(colData, state.fillCol, 3*4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-		for x = 1:length(x1)
-			@inbounds glDrawArrays(GL_TRIANGLES, (x-1)*shapeStride, shapeStride)
+		@inbounds @simd for x = 1:length(x1)
+			glDrawArrays(GL_TRIANGLES, (x-1)*shapeStride, shapeStride)
 		end
 	end
 	if state.strokeStuff
 		loadColors!(colData, state.strokeCol, 3*4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-		for x = 1:length(x1)
-			@inbounds glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
+		@inbounds @simd for x = 1:length(x1)
+			glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
 		end
 	end
 end
@@ -671,31 +745,31 @@ function vertices(vs)
 	shapeData.nVertices = size(vs, 2)
 	shapeData.vertexStride = 9
 	shapeData.shapeVertices = zeros(GLfloat, 9*size(vs, 2))
-	@inbounds shapeData.shapeVertices[1:shapeData.vertexStride:end] = vs[1, :]
-	@inbounds shapeData.shapeVertices[2:shapeData.vertexStride:end] = vs[2, :]
+	shapeData.shapeVertices[1:shapeData.vertexStride:end] = vs[1, :]
+	shapeData.shapeVertices[2:shapeData.vertexStride:end] = vs[2, :]
 end
 
 function vertices(vs, ts)
 	shapeData.nVertices = size(vs, 2)
 	shapeData.vertexStride = 9
 	shapeData.shapeVertices = zeros(GLfloat, 9*size(vs, 2))
-	@inbounds shapeData.shapeVertices[1:shapeData.vertexStride:end] = vs[1, :]
-	@inbounds shapeData.shapeVertices[2:shapeData.vertexStride:end] = vs[2, :]
+	shapeData.shapeVertices[1:shapeData.vertexStride:end] = vs[1, :]
+	shapeData.shapeVertices[2:shapeData.vertexStride:end] = vs[2, :]
 
 	if state.drawTexture
 		# texcoords
 		# texData = zeros(GLfloat, numSlices*4*length(xc))
-		# @inbounds texData[8:shapeData.vertexStride:end] = 0
-		# @inbounds texData[9:shapeData.vertexStride:end] = 0
+		# texData[8:shapeData.vertexStride:end] = 0
+		# texData[9:shapeData.vertexStride:end] = 0
 
-		# @inbounds texData[17:shapeData.vertexStride:end] = 1
-		# @inbounds texData[18:shapeData.vertexStride:end] = 0
+		# texData[17:shapeData.vertexStride:end] = 1
+		# texData[18:shapeData.vertexStride:end] = 0
 
-		# @inbounds texData[26:shapeData.vertexStride:end] = 1
-		# @inbounds texData[27:shapeData.vertexStride:end] = 1
+		# texData[26:shapeData.vertexStride:end] = 1
+		# texData[27:shapeData.vertexStride:end] = 1
 
-		# @inbounds texData[34:shapeData.vertexStride:end] = 0
-		# @inbounds texData[35:shapeData.vertexStride:end] = 1
+		# texData[34:shapeData.vertexStride:end] = 0
+		# texData[35:shapeData.vertexStride:end] = 1
 	end
 end
 

@@ -19,7 +19,7 @@ function fillcol(r, g, b, a)
     end
     if state.cMode == "RGB"
         state.fillCol = RGB[]
-        for x = 1:length(r)
+        @inbounds @simd for x = 1:length(r)
             push!(state.fillCol, RGB(r[x], g[x], b[x]))
         end
     else
@@ -40,7 +40,7 @@ function strokecol(r, g, b, a)
     end
     if state.cMode == "RGB"
         state.strokeCol = RGB[]
-        for x = 1:length(r)
+        @inbounds @simd for x = 1:length(r)
             push!(state.strokeCol, RGB(r[x], g[x], b[x]))
         end
     else

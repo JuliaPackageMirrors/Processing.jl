@@ -44,10 +44,10 @@ function box(s)
 	posStride = 35*3
 	posData = zeros(GLfloat, 35*3*length(s))
 
-	for x = 1:35
-		@inbounds posData[3*(x-1)+1] = cubeVertices[3*(x-1)+1]
-		@inbounds posData[3*(x-1)+2] = cubeVertices[3*(x-1)+2]
-		@inbounds posData[3*(x-1)+3] = cubeVertices[3*(x-1)+3]
+	@inbounds @simd for x = 1:35
+		posData[3*(x-1)+1] = cubeVertices[3*(x-1)+1]
+		posData[3*(x-1)+2] = cubeVertices[3*(x-1)+2]
+		posData[3*(x-1)+3] = cubeVertices[3*(x-1)+3]
 	end
 
 	glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[globjs.posind])
@@ -99,8 +99,8 @@ function box(s)
 		loadColors!(colData, state.fillCol, 35*4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-		for x = 1:length(s)
-			@inbounds glDrawArrays(GL_TRIANGLES, (x-1)*shapeStride, shapeStride)
+		@inbounds @simd for x = 1:length(s)
+			glDrawArrays(GL_TRIANGLES, (x-1)*shapeStride, shapeStride)
 		end
 		# glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW)
 		# glDrawElements(GL_TRIANGLES, 6*length(xtopleft), GL_UNSIGNED_INT, C_NULL)
@@ -109,7 +109,7 @@ function box(s)
 		loadColors!(colData, state.strokeCol, 35*4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-		for x = 1:length(s)
+		@inbounds @simd for x = 1:length(s)
 			glDrawArrays(GL_LINE_LOOP, (x-1)*shapeStride, shapeStride)
 		end
 	end
@@ -121,8 +121,8 @@ function sphere(r)
 		loadColors!(colData, state.fillCol, 35*4)
 		glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[globjs.colind])
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colData), colData, GL_STATIC_DRAW)
-		for x = 1:length(s)
-			@inbounds glDrawArrays(GL_TRIANGLES, (x-1)*shapeStride, shapeStride)
+		@inbounds @simd for x = 1:length(s)
+			glDrawArrays(GL_TRIANGLES, (x-1)*shapeStride, shapeStride)
 		end
 		# glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW)
 		# glDrawElements(GL_TRIANGLES, 6*length(xtopleft), GL_UNSIGNED_INT, C_NULL)

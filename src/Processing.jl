@@ -2,9 +2,6 @@ VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
 module Processing
 
-# Images is not precompiling correctly on Windows
-# with the new updates. Should hopefully be fixed
-# soon.
 using ModernGL, GLFW, Colors, Tau, Images
 using FreeType, FreeTypeAbstraction
 using GLAbstraction, GeometryTypes, Packing
@@ -25,6 +22,8 @@ type stateStruct
     tintCol::Array{Color, 1}
     program::GLuint
     drawTexture::Bool
+    aspectRatio::Float32
+    preserveAspectRatio::Bool
     fbSize::Tuple{Int32,Int32}
     strokeWeight::Float32
     fontFace::AbstractString
@@ -47,7 +46,7 @@ type stateStruct
 end
 
 # need to generalize font system
-state = stateStruct([RGB(0.8, 0.8, 0.8)], true, [RGB(1.0, 1.0, 1.0)], true, [RGB(0.0, 0.0, 0.0)], false, [RGB(0.0, 0.0, 0.0)], GLuint(0), false, (Int32(0), Int32(0)), 1.0, "", 0.4, 275, 275, -1., 1., 1., -1., "RGB", "Processing.jl", "CENTER", "CORNER", "CORNER", "CORNER", 60, 0, false)
+state = stateStruct([RGB(0.8, 0.8, 0.8)], true, [RGB(1.0, 1.0, 1.0)], true, [RGB(0.0, 0.0, 0.0)], false, [RGB(0.0, 0.0, 0.0)], GLuint(0), false, 1., true, (Int32(0), Int32(0)), 1.0, "", 0.4, 275, 275, -1., 1., 1., -1., "RGB", "Processing.jl", "CENTER", "CORNER", "CORNER", "CORNER", 60, 0, false)
 
 # by default, use system fonts that are known to basically always be available
 @windows_only state.fontFace = "C:/Windows/Fonts/arial.ttf"
@@ -161,13 +160,21 @@ globjs = GLobjs(GLuint[], GLuint[], 0, GLuint[], 0, GLuint[], 0, GLuint[], GLuin
 
 export screen, animate, endDrawing, drawingWindow
 
-function screen(width, height; fullScreen=false)
+function screen(width, height; fullScreen=false, preserveAspectRatio=true)
     GLFW.Init()
+
+    GLFW.WindowHint(GLFW.VISIBLE, true)
 
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
     GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
     GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
+
+    # try to activate 10 bpc support
+    GLFW.WindowHint(GLFW.RED_BITS, 10)
+    GLFW.WindowHint(GLFW.GREEN_BITS, 10)
+    GLFW.WindowHint(GLFW.BLUE_BITS, 10)
+    GLFW.WindowHint(GLFW.ALPHA_BITS, 8)
 
     # anti-aliasing by default
     GLFW.WindowHint(GLFW.SAMPLES, 4)
@@ -188,6 +195,9 @@ function screen(width, height; fullScreen=false)
         state.height = height
         window = GLFW.CreateWindow(state.width, state.height, state.title)
     end
+
+    state.aspectRatio = state.width/state.height
+    state.preserveAspectRatio = preserveAspectRatio
 
     GLFW.MakeContextCurrent(window)
     GLFW.ShowWindow(window)
@@ -294,15 +304,14 @@ function screen(width, height; fullScreen=false)
     @windows_only begin
         if GLFW.WindowShouldClose(window)
             GLFW.DestroyWindow(window)
-            GLFW.Terminate()
         end
     end
 
     return window
 end
 
-screen(w; fullScreen=false) = screen(w, w; fullScreen=fullScreen)
-screen(; fullScreen=false) = screen(state.width, state.height; fullScreen=fullScreen)
+screen(w; fullScreen=false, preserveAspectRatio=true) = screen(w, w; fullScreen=fullScreen, preserveAspectRatio=preserveAspectRatio)
+screen(; fullScreen=false, preserveAspectRatio=true) = screen(state.width, state.height; fullScreen=fullScreen, preserveAspectRatio=preserveAspectRatio)
 
 function animate(window)
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
@@ -332,16 +341,21 @@ function animate(window)
     @windows_only begin
         if GLFW.WindowShouldClose(window)
             GLFW.DestroyWindow(window)
-            GLFW.Terminate()
         end
     end
 
     state.frameCount += 1
 end
 
+function animate(f::Function, window)
+    while true
+        f()
+        animate(window)
+    end
+end
+
 function endDrawing(window)
     GLFW.DestroyWindow(window)
-    # GLFW.Terminate()
 end
 
 function drawingWindow(window)

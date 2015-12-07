@@ -23,7 +23,7 @@ function text(str::AbstractString, x, y)
     n = 0
     totyadv = 0
     nforline = 0
-	for c in str
+	@inbounds for c in str
         # if we hit a newline character or we reach the max line
         # length, then move to next line, where the next line is
         # determined by the average y advance from the characters
@@ -39,55 +39,55 @@ function text(str::AbstractString, x, y)
 
 		ch = fontState.characters[c]
 
-		@inbounds xpos = x + ch.bearing[1] * state.textSize
-        @inbounds ypos = y - (ch.size[2] - ch.bearing[2]) * state.textSize
+		xpos = x + ch.bearing[1] * state.textSize
+        ypos = y - (ch.size[2] - ch.bearing[2]) * state.textSize
 
-        @inbounds w = ch.size[1] * state.textSize
-        @inbounds h = ch.size[2] * state.textSize
+        w = ch.size[1] * state.textSize
+        h = ch.size[2] * state.textSize
 
-        @inbounds totyadv += ch.advance[2] * state.textSize
+        totyadv += ch.advance[2] * state.textSize
 
         if w == 0 || h == 0
             continue
         end
 
-        @inbounds posData[n+1] = xpos
-        @inbounds posData[n+2] = ypos + h
+        posData[n+1] = xpos
+        posData[n+2] = ypos + h
 
-        @inbounds posData[n+3] = xpos
-        @inbounds posData[n+4] = ypos
+        posData[n+3] = xpos
+        posData[n+4] = ypos
 
-        @inbounds posData[n+5] = xpos + w
-        @inbounds posData[n+6] = ypos
+        posData[n+5] = xpos + w
+        posData[n+6] = ypos
 
-        @inbounds posData[n+7] = xpos
-        @inbounds posData[n+8] = ypos + h
+        posData[n+7] = xpos
+        posData[n+8] = ypos + h
 
-        @inbounds posData[n+9] = xpos + w
-        @inbounds posData[n+10] = ypos
+        posData[n+9] = xpos + w
+        posData[n+10] = ypos
 
-        @inbounds posData[n+11] = xpos + w
-        @inbounds posData[n+12] = ypos + h
+        posData[n+11] = xpos + w
+        posData[n+12] = ypos + h
 
-        @inbounds texData[n+1] = ch.atlasOffset
-        @inbounds texData[n+2] = 0.0
+        texData[n+1] = ch.atlasOffset
+        texData[n+2] = 0.0
 
-        @inbounds texData[n+3] = ch.atlasOffset
-        @inbounds texData[n+4] = ch.size[2] / fontState.atlasHeight
+        texData[n+3] = ch.atlasOffset
+        texData[n+4] = ch.size[2] / fontState.atlasHeight
 
-        @inbounds texData[n+5] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
-        @inbounds texData[n+6] = ch.size[2] / fontState.atlasHeight
+        texData[n+5] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
+        texData[n+6] = ch.size[2] / fontState.atlasHeight
 
-        @inbounds texData[n+7] = ch.atlasOffset
-        @inbounds texData[n+8] = 0.0
+        texData[n+7] = ch.atlasOffset
+        texData[n+8] = 0.0
 
-        @inbounds texData[n+9] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
-        @inbounds texData[n+10] = ch.size[2] / fontState.atlasHeight
+        texData[n+9] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
+        texData[n+10] = ch.size[2] / fontState.atlasHeight
 
-        @inbounds texData[n+11] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
-        @inbounds texData[n+12] = 0.0
+        texData[n+11] = ch.atlasOffset + ch.size[1] / fontState.atlasWidth
+        texData[n+12] = 0.0
 
-		@inbounds x += ch.advance[1] * state.textSize
+		x += ch.advance[1] * state.textSize
         n += 2*6
         nforline += 1
 	end
