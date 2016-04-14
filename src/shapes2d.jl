@@ -436,7 +436,7 @@ end
 quad(x1, y1, x2, y2, x3, y3, x4, y4, tex::GLuint) = quad(x1, y1, 0, x2, y2, 0, x3, y3, 0, x4, y4, 0, tex::GLuint)
 quad(x1, y1, x2, y2, x3, y3, x4, y4) = quad(x1, y1, 0, x2, y2, 0, x3, y3, 0, x4, y4, 0)
 
-function rect(xtopleft, ytopleft, ztopleft, width, height)
+function rect(xtopleft::Float64, ytopleft::Float64, ztopleft::Float64, width::Float64, height::Float64)
 	if state.preserveAspectRatio
 		if state.aspectRatio > 1
 			xtopleft = xtopleft ./ state.aspectRatio
@@ -562,7 +562,7 @@ function rect(xtopleft, ytopleft, ztopleft, width, height)
 	end
 end
 
-function rect(xtopleft, ytopleft, ztopleft, width, height, tex::GLuint)
+function rect(xtopleft::Float64, ytopleft::Float64, ztopleft::Float64, width::Float64, height::Float64, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
 	switchShader("texturedShapes")
@@ -570,8 +570,8 @@ function rect(xtopleft, ytopleft, ztopleft, width, height, tex::GLuint)
 	switchShader("basicShapes")
 end
 
-rect(xtopleft, ytopleft, width, height, tex::GLuint) = rect(xtopleft, ytopleft, 0, width, height, tex::GLuint)
-rect(xtopleft, ytopleft, width, height) = rect(xtopleft, ytopleft, 0, width, height)
+rect(xtopleft::Float64, ytopleft::Float64, width::Float64, height::Float64, tex::GLuint) = rect(xtopleft, ytopleft, 0., width, height, tex)
+rect(xtopleft::Float64, ytopleft::Float64, width::Float64, height::Float64) = rect(xtopleft, ytopleft, 0., width, height)
 
 function triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3)
 	if state.preserveAspectRatio

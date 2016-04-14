@@ -317,6 +317,8 @@ function switchShader(whichShader)
 		glBindVertexArray(globjs.vaos[3])
 		globjs.posind = 3
 		globjs.texind = 2
+
+		glUniform3f(glGetUniformLocation(shaderBank["fontDrawing"], "textColor"), GLfloat(state.fillCol[1].r), GLfloat(state.fillCol[1].g), GLfloat(state.fillCol[1].b))
 	elseif whichShader == "drawFramebuffer"
 		glBindVertexArray(globjs.vaos[4])
 		globjs.posind = 4

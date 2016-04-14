@@ -38,7 +38,7 @@ x = 1
 t = 0
 
 image = Processing.loadImage(Pkg.dir()*"/Processing/test/image.png")
-tex = Processing.texture(image)
+tex, w, h = Processing.texture(image)
 
 @time while x < 600
 	st = time_ns()
