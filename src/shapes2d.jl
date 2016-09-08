@@ -108,9 +108,11 @@ end
 function arc(xc, yc, zc, w, h, start, stop, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
-	switchShader("texturedShapes")
+	shader("texturedShapes")
 	arc(xc, yc, zc, w, h, start, stop)
-	switchShader("basicShapes")
+	if state.alternateShader == nothing
+        shader("basicShapes")
+    end
 end
 
 arc(xc, yc, w, h, start, stop, tex::GLuint) = arc(xc, yc, 0, w, h, start, stop, tex::GLuint)
@@ -206,9 +208,11 @@ end
 function ellipse(xc, yc, zc, w, h, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
-	switchShader("texturedShapes")
+	shader("texturedShapes")
 	ellipse(xc, yc, zc, w, h)
-	switchShader("basicShapes")
+	if state.alternateShader == nothing
+        shader("basicShapes")
+    end
 end
 
 ellipse(xc, yc, w, h, tex::GLuint) = ellipse(xc, yc, 0, w, h, tex::GLuint)
@@ -428,9 +432,11 @@ end
 function quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
-	switchShader("texturedShapes")
+	shader("texturedShapes")
 	quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4)
-	switchShader("basicShapes")
+	if state.alternateShader == nothing
+        shader("basicShapes")
+    end
 end
 
 quad(x1, y1, x2, y2, x3, y3, x4, y4, tex::GLuint) = quad(x1, y1, 0, x2, y2, 0, x3, y3, 0, x4, y4, 0, tex::GLuint)
@@ -565,9 +571,11 @@ end
 function rect(xtopleft::Float64, ytopleft::Float64, ztopleft::Float64, width::Float64, height::Float64, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
-	switchShader("texturedShapes")
+	shader("texturedShapes")
 	rect(xtopleft, ytopleft, ztopleft, width, height)
-	switchShader("basicShapes")
+    if state.alternateShader == nothing
+        shader("basicShapes")
+    end
 end
 
 rect(xtopleft::Float64, ytopleft::Float64, width::Float64, height::Float64, tex::GLuint) = rect(xtopleft, ytopleft, 0., width, height, tex)
@@ -653,9 +661,13 @@ end
 function triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3, tex::GLuint)
 	glActiveTexture(GL_TEXTURE2)
 	glBindTexture(GL_TEXTURE_2D, tex)
-	switchShader("texturedShapes")
+	shader("texturedShapes")
 	triangle(x1, y1, z1, x2, y2, z2, x3, y3, z3)
-	switchShader("basicShapes")
+	if state.alternateShader == nothing
+        shader("basicShapes")
+    else
+		shader(state.alternateShader)
+	end
 end
 
 triangle(x1, y1, x2, y2, x3, y3, tex::GLuint) = triangle(x1, y1, 0, x2, y2, 0, x3, y3, 0, tex::GLuint)

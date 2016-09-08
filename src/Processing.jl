@@ -11,15 +11,21 @@ using GLAbstraction, GeometryTypes, Packing
 const GL_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FE
 
 include("constants.jl")
+include("shaders.jl")
+
+shaderBank = Dict("basicShapes" => GLuint(0),
+                "texturedShapes" => GLuint(0),
+                "fontDrawing" => GLuint(0),
+                "drawFramebuffer" => GLuint(0))
 
 type stateStruct
-    bgCol::Array{Color, 1}
+    bgCol::Array{RGB{Float64}, 1}
     fillStuff::Bool
-    fillCol::Array{Color, 1}
+    fillCol::Array{RGB{Float64}, 1}
     strokeStuff::Bool
-    strokeCol::Array{Color, 1}
+    strokeCol::Array{RGB{Float64}, 1}
     tintStuff::Bool
-    tintCol::Array{Color, 1}
+    tintCol::Array{RGB{Float64}, 1}
     program::GLuint
     drawTexture::Bool
     aspectRatio::Float32
@@ -43,10 +49,11 @@ type stateStruct
     frameRate::Int
     frameCount::Int
     fontsInitialized::Bool
+    alternateShader::Union{Shader,Void}
 end
 
 # need to generalize font system
-state = stateStruct([RGB(0.8, 0.8, 0.8)], true, [RGB(1.0, 1.0, 1.0)], true, [RGB(0.0, 0.0, 0.0)], false, [RGB(0.0, 0.0, 0.0)], GLuint(0), false, 1., true, (Int32(0), Int32(0)), 1.0, "", 0.4, 275, 275, -1., 1., 1., -1., "RGB", "Processing.jl", "CENTER", "CORNER", "CORNER", "CORNER", 60, 0, false)
+state = stateStruct([RGB(0.8, 0.8, 0.8)], true, [RGB(1.0, 1.0, 1.0)], true, [RGB(0.0, 0.0, 0.0)], false, [RGB(0.0, 0.0, 0.0)], GLuint(0), false, 1., true, (Int32(0), Int32(0)), 1.0, "", 0.4, 275, 275, -1., 1., 1., -1., "RGB", "Processing.jl", "CENTER", "CORNER", "CORNER", "CORNER", 60, 0, false, nothing)
 
 # by default, use system fonts that are known to basically always be available
 @windows_only state.fontFace = "C:/Windows/Fonts/arial.ttf"
@@ -118,13 +125,6 @@ function __init__()
     FreeTypeAbstraction.setpixelsize(fontState.face, fontState.fontWidth, fontState.fontHeight)
 end
 
-include("shaders.jl")
-
-shaderBank = Dict("basicShapes" => GLuint(0),
-                "texturedShapes" => GLuint(0),
-                "fontDrawing" => GLuint(0),
-                "drawFramebuffer" => GLuint(0))
-
 # this will be the texture for rendering into our own framebuffer.
 texColorBuffer = GLuint[0]
 # this contains the coordinates for the framebuffer texture that we draw at
@@ -160,13 +160,13 @@ globjs = GLobjs(GLuint[], GLuint[], 0, GLuint[], 0, GLuint[], 0, GLuint[], GLuin
 
 export screen, animate, endDrawing, drawingWindow
 
-function screen(width, height; fullScreen=false, preserveAspectRatio=true)
+function screen(width, height; fullScreen=false, preserveAspectRatio=true, GLmajv=3, GLminv=2)
     GLFW.Init()
 
     GLFW.WindowHint(GLFW.VISIBLE, true)
 
-    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
-    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
+    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, GLmajv)
+    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, GLminv)
     GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE)
     GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
 
@@ -256,11 +256,11 @@ function screen(width, height; fullScreen=false, preserveAspectRatio=true)
 
     glEnable(GL_MULTISAMPLE) # just be double sure that multisampling is on
 
-    glEnable(GL_TEXTURE_2D)
+    # glEnable(GL_TEXTURE_2D)
 
     glEnable(GL_LINE_SMOOTH)
-    glEnable(GL_POINT_SMOOTH)
-    glHint(GL_POINT_SMOOTH_HINT, GL_NICEST)
+    # glEnable(GL_POINT_SMOOTH)
+    # glHint(GL_POINT_SMOOTH_HINT, GL_NICEST)
 
     glEnable(GL_DEPTH_TEST)
     glDepthFunc(GL_LEQUAL)
@@ -275,7 +275,7 @@ function screen(width, height; fullScreen=false, preserveAspectRatio=true)
     glDrawBuffers(1, [GL_COLOR_ATTACHMENT0])
     glBindFramebuffer(GL_FRAMEBUFFER, globjs.fbos[1])
     glEnable(GL_DEPTH_TEST)
-    switchShader("basicShapes")
+    shader("basicShapes")
     glClearColor(state.bgCol[1].r, state.bgCol[1].g, state.bgCol[1].b, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -283,7 +283,7 @@ function screen(width, height; fullScreen=false, preserveAspectRatio=true)
     glClearColor(1.0, 1.0, 1.0, 1.0)
     glClear(GL_COLOR_BUFFER_BIT)
     glDisable(GL_DEPTH_TEST)
-    switchShader("drawFramebuffer")
+    shader("drawFramebuffer")
 
     # draw framebuffer texture to screen
     glActiveTexture(GL_TEXTURE0)
@@ -295,7 +295,7 @@ function screen(width, height; fullScreen=false, preserveAspectRatio=true)
 
     glBindFramebuffer(GL_FRAMEBUFFER, globjs.fbos[1])
     glEnable(GL_DEPTH_TEST)
-    switchShader("basicShapes")
+    shader("basicShapes")
     glClearColor(state.bgCol[1].r, state.bgCol[1].g, state.bgCol[1].b, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -307,18 +307,21 @@ function screen(width, height; fullScreen=false, preserveAspectRatio=true)
         end
     end
 
+    glErrorMessage()
+
     return window
 end
 
-screen(w; fullScreen=false, preserveAspectRatio=true) = screen(w, w; fullScreen=fullScreen, preserveAspectRatio=preserveAspectRatio)
-screen(; fullScreen=false, preserveAspectRatio=true) = screen(state.width, state.height; fullScreen=fullScreen, preserveAspectRatio=preserveAspectRatio)
+screen(w; fullScreen=false, preserveAspectRatio=true, GLmajv=3, GLminv=2) = screen(w, w; fullScreen=fullScreen, preserveAspectRatio=preserveAspectRatio, GLmajv=GLmajv, GLminv=GLminv)
+screen(; fullScreen=false, preserveAspectRatio=true, GLmajv=3, GLminv=2) = screen(state.width, state.height; fullScreen=fullScreen, preserveAspectRatio=preserveAspectRatio, GLmajv=GLmajv, GLminv=GLminv)
 
 function animate(window)
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
-    glClearColor(1.0, 1.0, 1.0, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT)
+    # glClearColor(1.0, 1.0, 1.0, 1.0)
+    # glClear(GL_COLOR_BUFFER_BIT)
     glDisable(GL_DEPTH_TEST)
-    switchShader("drawFramebuffer")
+
+    shader("drawFramebuffer")
 
     # draw framebuffer texture to screen
     glActiveTexture(GL_TEXTURE0)
@@ -334,7 +337,11 @@ function animate(window)
 
     glBindFramebuffer(GL_FRAMEBUFFER, globjs.fbos[1])
     glEnable(GL_DEPTH_TEST)
-    switchShader("basicShapes")
+    if state.alternateShader == nothing
+        shader("basicShapes")
+    else
+        shader(state.alternateShader)
+    end
 
     # for some reason, Windows 7 loses contact with the rendering context if
     # this check isn't made before every draw call

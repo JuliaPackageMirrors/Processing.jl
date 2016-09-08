@@ -1,6 +1,6 @@
 export texture, textureMode, textureWrap, delTextures
 
-function texture(img)
+function texture(img::Image)
 	imagesep = separate(img)
 	imagedata = reinterpret(Float64, map(Float64, data(imagesep)))
 
@@ -54,6 +54,32 @@ function texture(img)
 	# this will require some performance testing. it might be too heavy for
 	# psychophysics
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16)
+	glBindTexture(GL_TEXTURE_2D, C_NULL)
+
+	return tex[1], w/state.width, h/state.height
+end
+
+function texture(data)
+	w = size(data,2)
+	h = size(data,1)
+
+	tex = GLuint[0]
+	glGenTextures(1, tex)
+	glActiveTexture(GL_TEXTURE2)
+	glBindTexture(GL_TEXTURE_2D, tex[1])
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, w, h, 0, GL_RGB, GL_FLOAT, map(Float32, data[:]))
+	glGenerateMipmap(GL_TEXTURE_2D)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+	max_aniso = [Float32(0.0)]
+	glGetFloatv(GL_TEXTURE_MAX_ANISOTROPY_EXT, max_aniso)
+	# glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_aniso[1])
+	# this will require some performance testing. it might be too heavy for
+	# psychophysics
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16)
+	glBindTexture(GL_TEXTURE_2D, C_NULL)
 
 	return tex[1], w/state.width, h/state.height
 end

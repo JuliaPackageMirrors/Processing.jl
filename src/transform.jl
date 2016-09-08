@@ -1,5 +1,6 @@
 export applyMatrix, popMatrix, pushMatrix, resetMatrix
 export rotate, Scale, shearX, shearY, translate
+export rotateX, rotateY, rotateZ
 
 function applyMatrix(n00, n01, n02, n03, n10, n11, n12, n13, n20, n21, n22, n23, n30, n31, n32, n33)
 	m = GLfloat[n00 n01 n02 n03;

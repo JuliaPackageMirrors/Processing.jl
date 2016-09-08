@@ -13,7 +13,7 @@ function text(str::AbstractString, x, y)
 	x = ((x+1)/2)*state.width
 	y = ((y+1)/2)*state.height
 
-	switchShader("fontDrawing")
+	shader("fontDrawing")
 	glActiveTexture(GL_TEXTURE1)
     glEnable(GL_CULL_FACE)
 
@@ -98,7 +98,7 @@ function text(str::AbstractString, x, y)
     glDrawArrays(GL_TRIANGLES, 0, 6*length(str))
 
     glDisable(GL_CULL_FACE)
-	switchShader("basicShapes")
+	shader("basicShapes")
 
     sfx = state.fbSize[1]/state.width; sfy = state.fbSize[2]/state.height
     x = (x./state.width - 0.5)*sfx

@@ -1,3 +1,5 @@
+export Shader, set, loadShader, shader, ShaderType, resetShader
+
 function initShaders()
 	# basicShapes
 	const vshBS = """
@@ -133,10 +135,10 @@ function initShaders()
 
 	out vec4 outColor;
 
-	uniform sampler2D tex;
+	uniform sampler2D texture;
 
 	void main() {
-		outColor = texture(tex, Texcoord) * vColor;
+		outColor = texture(texture, Texcoord) * vColor;
 	}
 	"""
 
@@ -169,7 +171,7 @@ function initShaders()
 	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, false, 2*sizeof(GLfloat), 0)
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderBank["texturedShapes"], "MVP"), 1, false, GLmatState.currMatrix)
-	glUniform1i(glGetUniformLocation(shaderBank["texturedShapes"], "tex"), 2)
+	glUniform1i(glGetUniformLocation(shaderBank["texturedShapes"], "texture"), 2)
 
 	# fontDrawing
 	const vshFD = """
@@ -300,7 +302,22 @@ function initShaders()
 	glUniform1i(glGetUniformLocation(shaderBank["drawFramebuffer"], "texFramebuffer"), 0)
 end
 
-function switchShader(whichShader)
+@enum ShaderType POINT=1 LINE=2 TRIANGLE=3
+
+type Shader
+	shaderName::String
+	fragFilename::String
+	vertFilename::String
+	vaoind::Int
+	posind::Int
+	colind::Int
+	texind::Int
+	drawTexture::Bool
+end
+
+Shader(sn, ff, vf) = Shader(sn, ff, vf, 0, 0, 0, 0, false)
+
+function shader(whichShader::String, shaderType::ShaderType=TRIANGLE)
 	state.program = shaderBank[whichShader]
 	glUseProgram(shaderBank[whichShader])
 
@@ -330,4 +347,131 @@ function switchShader(whichShader)
 	else
 		state.drawTexture = false
 	end
+end
+
+function shader(whichShader::Shader, shaderType::ShaderType=TRIANGLE)
+	state.program = shaderBank[whichShader.shaderName]
+	glUseProgram(shaderBank[whichShader.shaderName])
+
+	glBindVertexArray(globjs.vaos[whichShader.vaoind])
+	globjs.posind = whichShader.posind
+	globjs.colind = whichShader.colind
+	state.drawTexture = whichShader.drawTexture
+	if whichShader.drawTexture
+		globjs.texind = whichShader.texind
+	end
+
+	state.alternateShader = whichShader
+end
+
+function set(shader::Shader, uniformName::String, value)
+	ul = glGetUniformLocation(shaderBank[shader.shaderName], uniformName)
+	if length(value) == 1
+		glUniform1f(ul, value)
+	elseif length(value) == 3
+		glUniform3fv(ul, GLsizei(1), Ref(value))
+	elseif value <: AbstractArray
+		glUniformMatrix4fv(ul, GLsizei(1), GL_FALSE, Ref(value))
+	end
+end
+
+function loadShader(fragFilename)
+	ff = open(fragFilename, "r")
+	fsh = readall(ff)
+	close(ff)
+
+	shader = Shader(randstring(), fragFilename, "")
+
+	vsh = """
+	$(get_glsl_version_string())
+
+	in vec3 position;
+	in vec4 color;
+
+	out vec4 vColor;
+
+	uniform mat4 MVP;
+
+	void main() {
+		vColor = color;
+		gl_Position = MVP * vec4(position, 1.0);
+	}
+	"""
+
+	vertexShader = createShader(vsh, GL_VERTEX_SHADER)
+	fragmentShader = createShader(fsh, GL_FRAGMENT_SHADER)
+	program = createShaderProgram(vertexShader, fragmentShader)
+	shaderBank[shader.shaderName] = program
+	glUseProgram(program)
+
+	push!(globjs.vaos, glGenVertexArray())
+	glBindVertexArray(globjs.vaos[end])
+	shader.vaoind = length(globjs.vaos)
+    push!(globjs.ebos, glGenBuffer())
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, globjs.ebos[end])
+
+	push!(globjs.posvbos, glGenBuffer())
+    glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[end])
+    shader.posind = length(globjs.posvbos)
+    positionAttribute = glGetAttribLocation(program, "position")
+    glEnableVertexAttribArray(positionAttribute)
+    glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, false, 3*sizeof(GLfloat), 0)
+
+    push!(globjs.colvbos, glGenBuffer())
+    glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[end])
+    shader.colind = length(globjs.colvbos)
+    colorAttribute = glGetAttribLocation(program, "color")
+    glEnableVertexAttribArray(colorAttribute)
+    glVertexAttribPointer(colorAttribute, 4, GL_FLOAT, false, 4*sizeof(GLfloat), 0)
+
+	glUniformMatrix4fv(glGetUniformLocation(program, "MVP"), 1, false, GLmatState.currMatrix)
+
+	glUseProgram(state.program)
+
+	return shader
+end
+
+function loadShader(fragFilename, vertFilename)
+	ff = open(fragFilename, "r")
+	fsh = readall(ff)
+	close(ff)
+
+	vf = open(vertFilename, "r")
+	vsh = readall(vf)
+	close(vf)
+
+	shader = Shader(randstring(), fragFilename, vertFilename)
+
+	vertexShader = createShader(vsh, GL_VERTEX_SHADER)
+	fragmentShader = createShader(fsh, GL_FRAGMENT_SHADER)
+	program = createShaderProgram(vertexShader, fragmentShader)
+	shaderBank[shader.shaderName] = program
+	glUseProgram(program)
+
+	push!(globjs.vaos, glGenVertexArray())
+	glBindVertexArray(globjs.vaos[end])
+	shader.vaoind = length(globjs.vaos)
+    push!(globjs.ebos, glGenBuffer())
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, globjs.ebos[end])
+
+	push!(globjs.posvbos, glGenBuffer())
+    glBindBuffer(GL_ARRAY_BUFFER, globjs.posvbos[end])
+    shader.posind = length(globjs.posvbos)
+    positionAttribute = glGetAttribLocation(program, "position")
+    glEnableVertexAttribArray(positionAttribute)
+    glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, false, 3*sizeof(GLfloat), 0)
+
+    push!(globjs.colvbos, glGenBuffer())
+    glBindBuffer(GL_ARRAY_BUFFER, globjs.colvbos[end])
+    shader.colind = length(globjs.colvbos)
+    colorAttribute = glGetAttribLocation(program, "color")
+    glEnableVertexAttribArray(colorAttribute)
+    glVertexAttribPointer(colorAttribute, 4, GL_FLOAT, false, 4*sizeof(GLfloat), 0)
+
+	return shader
+end
+
+function resetShader()
+	shader("basicShapes")
+	state.alternateShader = nothing
 end

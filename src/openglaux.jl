@@ -136,3 +136,16 @@ function createShaderProgram(f, vertexShader, fragmentShader)
 end
 
 createShaderProgram(vertexShader, fragmentShader) = createShaderProgram(prog->0, vertexShader, fragmentShader)
+
+function removeAllShaders(shaderBank)
+	for (n, p) in shaderBank
+		glUseProgram(p)
+		as = glGetAttachedShaders(p)
+		for s in as
+			glDetachShader(p, s)
+			glDeleteShader(s)
+		end
+		glUseProgram(0)
+		glDeleteProgram(p)
+	end
+end
